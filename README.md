@@ -1,15 +1,18 @@
-# mindfry 🧠🔥
+# 🧠🔥 mindfry
 
-High-performance consciousness-inspired memory graph with lazy decay and auto-association.
+> Consciousness-inspired memory graph with lazy decay, auto-association, and mythological architecture
+
+[![npm version](https://img.shields.io/npm/v/mindfry.svg)](https://www.npmjs.com/package/mindfry)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Features
 
-- **Uint8Array Storage** - 25x memory reduction vs object-based storage
-- **Lazy Decay** - Energy computed on-demand, no tick() needed
-- **Auto-Association** - Priming-based automatic bond creation
-- **Decay Lookup Table** - Pre-computed exp() values for fast decay
-- **Bond Density Cap** - Controlled graph growth (max 20 bonds/node)
-- **Epoch-bounded Cache** - TopK cache invalidated only on state change
+- **Psyche** 🦋 - High-performance consciousness container with Uint8Array storage
+- **Morpheus** 💤 - Event-driven background maintenance (God of Dreams)
+- **AkashicRecords** 📜 - Cold storage persistence layer (Eternal Memory)
+- **Lazy Decay** - Energy computed on-demand, zero idle CPU
+- **Auto-Association** - Priming-based automatic bonds
+- **25x Memory Reduction** - 4 bytes per memory vs ~100 bytes with objects
 
 ## Installation
 
@@ -20,121 +23,109 @@ npm install mindfry
 ## Quick Start
 
 ```typescript
-import { createMind } from 'mindfry'
+import { createPsyche } from 'mindfry'
 
-// Create a mind with auto-association enabled
-const mind = createMind<{ text: string }>({
+// Create a consciousness container
+const psyche = createPsyche<{ text: string }>({
   defaultThreshold: 0.3,
   autoAssociate: true
 })
 
-// Remember creates memory and auto-bonds to conscious memories
-mind.remember('quantum', { text: 'Quantum Computing' })
-mind.remember('neural', { text: 'Neural Networks' })
-mind.remember('ai', { text: 'Artificial Intelligence' })
+// Remember something
+psyche.remember('idea-1', { text: 'Hello World' }, 1.0)
 
-// Stimulate activates memory and propagates priming
-mind.stimulate('quantum', 0.4)
+// Stimulate with priming propagation
+psyche.stimulate('idea-1', 0.3)
 
-// Query conscious memories
-const conscious = mind.getConscious()
-console.log(conscious.map(m => m.content.text))
-
-// Traverse from a starting point
-for (const item of mind.recall('quantum', 2)) {
-  console.log(`Depth ${item.depth}: ${mind.getAll()[item.memoryIndex].id}`)
+// Recall associated memories
+for (const item of psyche.recall('idea-1', 3)) {
+  console.log(item)
 }
 ```
 
-## Core Concepts
-
-### Conscious vs Subconscious
-
-Memories exist in two states:
-
-| State | Condition | Access Cost |
-|-------|-----------|-------------|
-| **Conscious** | `energy >= threshold` | Free (O(1)) |
-| **Subconscious** | `energy < threshold` | Requires `surface()` |
-
-### Lazy Decay
-
-Energy decays over time using the formula:
+## Architecture
 
 ```
-E(t) = E₀ × e^(-λt)
-```
-
-But computed **on-demand**, not eagerly. No CPU cost when idle.
-
-### Priming
-
-When memory A is stimulated, connected memories receive fractional activation:
-
-```
-B.energy += A.energyDelta × primingDecay × bondStrength
+┌─────────────────────────────────────────────────┐
+│                    mindfry                       │
+├─────────────────────────────────────────────────┤
+│  Psyche (Consciousness Container)               │
+│  ├─ Conscious (energy > threshold)              │
+│  └─ Subconscious (energy < threshold)           │
+├─────────────────────────────────────────────────┤
+│  Morpheus (Background Maintenance)              │
+│  ├─ Prune (dead bonds)                          │
+│  └─ Transfer (to AkashicRecords)                │
+├─────────────────────────────────────────────────┤
+│  AkashicRecords (Cold Storage)                  │
+│  ├─ inscribe() → persist                        │
+│  └─ retrieve() → reincarnate                    │
+└─────────────────────────────────────────────────┘
 ```
 
 ## API Reference
 
-### `createMind<T>(config?)`
+### Psyche
 
 ```typescript
-const mind = createMind<ContentType>({
-  // Limits
-  maxMemories: 65536,        // 64K max
-  maxBonds: 262144,          // 256K max
+const psyche = createPsyche<T>(config?: PsycheConfig)
 
-  // Defaults
-  defaultThreshold: 0.5,     // Conscious boundary
-  defaultDecayRate: 0.001,   // ~12 min half-life
+// Core operations
+psyche.remember(id, content, energy?)     // Create memory
+psyche.associate(id, fromId, toId, strength?)  // Create bond
+psyche.stimulate(id, energyDelta, prime?) // Stimulate memory
 
-  // Priming
-  primingDecay: 0.3,         // Energy decay per hop
-  maxPrimingDepth: 3,        // Max propagation depth
+// Query
+psyche.get(id)              // Get conscious memory
+psyche.getAll()             // All memories
+psyche.getConscious()       // Conscious only
+psyche.getSubconscious()    // Subconscious only
+psyche.recall(id, depth?)   // Traverse graph
 
-  // Auto-association
-  autoAssociate: true,       // Enable automatic bonds
-  autoAssociateTopK: 5,      // Max bonds per remember
-  autoAssociateMinEnergy: 0.3
-})
+// Surface
+psyche.surface(id)          // Bring to consciousness
 ```
 
-### Methods
+### Morpheus
 
-| Method | Description |
-|--------|-------------|
-| `remember(id, content, energy?)` | Create memory with auto-association |
-| `associate(id, fromId, toId, strength?)` | Manual bond creation |
-| `stimulate(id, delta?, prime?)` | Activate memory + priming |
-| `get(id)` | Get conscious memory |
-| `surface(id)` | Bring subconscious memory to conscious |
-| `recall(startId, maxDepth?, maxCost?)` | Traverse graph |
-| `getConscious()` | All conscious memories |
-| `getSubconscious()` | All subconscious memories |
-| `getBonds()` | All bonds |
-| `getStats()` | Memory/bond/energy statistics |
+```typescript
+const morpheus = new Morpheus(deps, config?)
+
+morpheus.notify('pressure-drop')  // Hint maintenance opportunity
+morpheus.notify('idle')           // System is idle
+morpheus.awaken()                 // Interrupt dreaming
+```
+
+### AkashicRecords
+
+```typescript
+const akashic = new AkashicRecords(config?)
+
+await akashic.inscribe(id, payload, energy, threshold, lastAccess)
+await akashic.retrieve(id)         // Returns AkashicRecord | null
+await akashic.exists(id)
+await akashic.erase(id)
+await akashic.count()
+```
 
 ## Performance
 
-| Operation | Complexity | Notes |
-|-----------|------------|-------|
-| remember | O(K) | K = autoAssociateTopK |
-| get | O(1) | Direct index lookup |
-| stimulate | O(D×B) | D = depth, B = avg bonds |
-| getEnergy | O(1) | LUT lookup |
-| topKConscious | O(1)* | Cached, invalidated on change |
-
-*After initial computation
+| Metric | Value |
+|--------|-------|
+| Memory per node | 4 bytes |
+| getEnergy() | O(1) LUT lookup |
+| topKConscious() | O(1) cached |
+| Idle CPU | 0% |
+| Bundle (ESM) | ~25 KB |
 
 ## Build
 
 ```bash
-npm run build    # ESM + CJS + DTS
+npm run build    # Build ESM/CJS/DTS
 npm run test     # Run tests
 npm run dev      # Watch mode
 ```
 
 ## License
 
-MIT
+MIT © [Erdem Arslan](https://github.com/erdemdev)

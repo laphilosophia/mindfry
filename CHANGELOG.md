@@ -13,12 +13,11 @@ All notable changes to this project will be documented in this file.
   - `inscribe()`: Memory → Archive
   - `retrieve()`: Archive → Memory (with accessScore decay)
   - MemoryAkashicBackend for testing
-- Mythological naming throughout
+- Shell layer stats in demo (Morpheus state, Akashic count, Pressure)
 
 ### Changed
 - **Mind → Psyche**: Main class renamed (backwards compat alias kept)
-- **Dreamer → Morpheus**: Background scheduler renamed
-- **Archive → AkashicRecords**: Persistence layer renamed
+- Demo updated with mythological branding
 
 ## [0.2.1] - 2026-01-14
 
