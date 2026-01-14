@@ -16,12 +16,14 @@
         font-family: 'SF Mono', 'Fira Code', monospace;
         background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
         color: #e0e0e0;
-        min-height: 100vh;
-        padding: 2rem;
+        height: 100%;
+        padding: 1rem;
       }
 
       h1 {
-        font-size: 1.5rem;
+        width: 100%;
+        text-align: center;
+        font-size: 1.25rem;
         margin-bottom: 1rem;
         background: linear-gradient(90deg, #00d4ff, #7c3aed);
         -webkit-background-clip: text;
@@ -38,10 +40,14 @@
       }
 
       .panel {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 12px;
         padding: 1.5rem;
+        max-height: calc(100% - 80px);
       }
 
       .panel h2 {
@@ -49,12 +55,12 @@
         text-transform: uppercase;
         letter-spacing: 0.1em;
         color: #888;
-        margin-bottom: 1rem;
       }
 
       #graph {
         width: 100%;
-        height: 400px;
+        height: 100%;
+        flex: 1;
         background: rgba(0, 0, 0, 0.3);
         border-radius: 8px;
         position: relative;
@@ -166,6 +172,30 @@
         margin-bottom: 1rem;
       }
 
+      .perf-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        background: rgba(124, 58, 237, 0.1);
+        border: 1px solid rgba(124, 58, 237, 0.3);
+        border-radius: 8px;
+        padding: 0.75rem;
+      }
+
+      .perf-stat {
+        text-align: center;
+      }
+
+      .perf-stat .stat-value {
+        font-size: 1rem;
+        color: #a855f7;
+      }
+
+      .perf-stat .stat-label {
+        font-size: 0.6rem;
+      }
+
       .stat {
         background: rgba(0, 0, 0, 0.3);
         padding: 0.75rem;
@@ -189,7 +219,7 @@
         background: rgba(0, 0, 0, 0.3);
         padding: 1rem;
         border-radius: 8px;
-        height: 120px;
+        height: 160px;
         overflow-y: auto;
         font-size: 0.7rem;
         line-height: 1.5;
@@ -212,7 +242,6 @@
       }
 
       #selected-info {
-        margin-top: 1rem;
         padding: 1rem;
         background: rgba(0, 0, 0, 0.3);
         border-radius: 8px;
@@ -253,7 +282,7 @@
         <h2>Memory Graph</h2>
         <div id="graph"></div>
         <div id="selected-info">
-          <p style="color: #888;">Click a node to see details</p>
+          <p style="color: #888; font-size: 0.75rem; text-align: center;">Click a node to see details</p>
         </div>
       </div>
 
@@ -279,6 +308,22 @@
           <div class="stat">
             <div class="stat-value" id="stat-budget">100</div>
             <div class="stat-label">Budget</div>
+          </div>
+        </div>
+
+        <h2>Performance</h2>
+        <div class="perf-stats">
+          <div class="perf-stat">
+            <div class="stat-value" id="perf-heap">0 KB</div>
+            <div class="stat-label">JS Heap</div>
+          </div>
+          <div class="perf-stat">
+            <div class="stat-value" id="perf-store">0 B</div>
+            <div class="stat-label">Store Memory</div>
+          </div>
+          <div class="perf-stat">
+            <div class="stat-value" id="perf-render">0 ms</div>
+            <div class="stat-label">Render Time</div>
           </div>
         </div>
 
@@ -368,8 +413,9 @@
       }
 
       function updateStats() {
+        const start = performance.now()
         let conscious = 0, subconscious = 0, energy = 0
-        for (const m of mind.all) {
+        for (const m of mind.getAll()) {
           energy += m.energy
           if (m.isConscious) conscious++
           else subconscious++
@@ -378,6 +424,22 @@
         document.getElementById('stat-subconscious').textContent = subconscious
         document.getElementById('stat-energy').textContent = energy.toFixed(2)
         document.getElementById('stat-budget').textContent = budget
+
+        // Perf stats
+        const renderTime = (performance.now() - start).toFixed(2)
+        document.getElementById('perf-render').textContent = `${renderTime} ms`
+
+        // JS Heap (Chrome only)
+        if (performance.memory) {
+          const heapMB = (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(1)
+          document.getElementById('perf-heap').textContent = `${heapMB} MB`
+        }
+
+        // Store memory estimate: 4 bytes per memory, 4 bytes per bond
+        const storeBytes = mind.size * 4 + mind.getBonds().length * 4
+        document.getElementById('perf-store').textContent = storeBytes < 1024
+          ? `${storeBytes} B`
+          : `${(storeBytes / 1024).toFixed(1)} KB`
       }
 
       function getPosition(id) {
@@ -395,7 +457,7 @@
         const currentMemoryIds = new Set()
         const currentBondIds = new Set()
 
-        for (const memory of mind.all) {
+        for (const memory of mind.getAll()) {
           currentMemoryIds.add(memory.id)
           const pos = getPosition(memory.id)
 
@@ -419,7 +481,7 @@
           node.textContent = memory.content.text?.substring(0, 12) || memory.id
         }
 
-        for (const bond of mind.bonds) {
+        for (const bond of mind.getBonds()) {
           currentBondIds.add(bond.id)
           const fromPos = positions.get(bond.from)
           const toPos = positions.get(bond.to)
@@ -462,7 +524,7 @@
 
       function updateSelectedInfo() {
         if (!selectedId) return
-        const memory = mind.all.find(m => m.id === selectedId)
+        const memory = mind.getAll().find(m => m.id === selectedId)
         if (!memory) return
 
         document.getElementById('selected-info').innerHTML = `
@@ -497,18 +559,7 @@
         const text = document.getElementById('memory-input').value.trim() || `Memory ${++memoryCounter}`
         const id = `m${Date.now()}`
 
-        mind.remember({ id, content: { text }, energy: 1.0 })
-
-        const others = mind.all.filter(m => m.id !== id)
-        if (others.length > 0) {
-          const target = others[Math.floor(Math.random() * others.length)]
-          mind.associate({
-            id: `b${Date.now()}`,
-            from: id,
-            to: target.id,
-            strength: 0.5 + Math.random() * 0.5
-          })
-        }
+        mind.remember(id, { text }, 1.0)
 
         document.getElementById('memory-input').value = ''
         logEntry(`✓ Remembered: "${text}"`, 'stimulate')
@@ -521,12 +572,12 @@
           return
         }
 
-        const memory = mind.all.find(m => m.id === selectedId)
+        const memory = mind.getAll().find(m => m.id === selectedId)
         if (memory) {
           const wasSubconscious = !memory.isConscious
-          memory.stimulate({ energy: 0.3 })
+          mind.stimulate(selectedId, 0.3)
 
-          if (wasSubconscious && memory.isConscious) {
+          if (wasSubconscious) {
             budget -= 5
             logEntry(`↑ Surfaced "${memory.content.text}" (cost: 5 budget)`, 'surface')
           } else {
@@ -564,18 +615,18 @@
       function init() {
         const ideas = ['Quantum', 'Neural', 'Graph', 'Memory', 'Decay']
         for (const idea of ideas) {
-          mind.remember({
-            id: idea.toLowerCase(),
-            content: { text: idea },
-            energy: 0.7 + Math.random() * 0.3
-          })
+          mind.remember(
+            idea.toLowerCase(),
+            { text: idea },
+            0.7 + Math.random() * 0.3
+          )
         }
 
-        mind.associate({ id: 'b1', from: 'quantum', to: 'neural', strength: 0.8 })
-        mind.associate({ id: 'b2', from: 'neural', to: 'graph', strength: 0.7 })
-        mind.associate({ id: 'b3', from: 'graph', to: 'memory', strength: 0.9 })
-        mind.associate({ id: 'b4', from: 'memory', to: 'decay', strength: 0.6 })
-        mind.associate({ id: 'b5', from: 'decay', to: 'quantum', strength: 0.5 })
+        mind.associate('b1', 'quantum', 'neural', 0.8)
+        mind.associate('b2', 'neural', 'graph', 0.7)
+        mind.associate('b3', 'graph', 'memory', 0.9)
+        mind.associate('b4', 'memory', 'decay', 0.6)
+        mind.associate('b5', 'decay', 'quantum', 0.5)
 
         updateTimeDisplay()
         refresh()
