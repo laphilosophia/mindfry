@@ -128,4 +128,4 @@ npm run dev      # Watch mode
 
 ## License
 
-MIT © [Erdem Arslan](https://github.com/erdemdev)
+MIT © [Erdem Arslan](https://github.com/laphilosophia)

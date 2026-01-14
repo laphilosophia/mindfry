@@ -1,6 +1,6 @@
 {
   "name": "mindfry",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "High-performance consciousness-inspired memory graph with lazy decay and auto-association",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -25,11 +25,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/erdemdev/mindfry.git"
+    "url": "git+https://github.com/laphilosophia/mindfry.git"
   },
-  "homepage": "https://github.com/erdemdev/mindfry#readme",
+  "homepage": "https://github.com/laphilosophia/mindfry#readme",
   "bugs": {
-    "url": "https://github.com/erdemdev/mindfry/issues"
+    "url": "https://github.com/laphilosophia/mindfry/issues"
   },
   "author": "Erdem Arslan",
   "license": "MIT",
