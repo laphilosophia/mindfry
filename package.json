@@ -1,6 +1,6 @@
 {
   "name": "mindfry",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "High-performance consciousness-inspired memory graph with lazy decay and auto-association",
   "type": "module",
   "main": "./dist/index.cjs",

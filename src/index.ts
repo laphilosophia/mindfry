@@ -1,11 +1,27 @@
-// mindfry - v0.2.0
-// High-performance consciousness-inspired memory graph
+// ═══════════════════════════════════════════════════════════════
+// mindfry - Consciousness-Inspired Memory Graph
+//
+// Psyche     - The soul/consciousness container
+// Morpheus   - God of dreams (maintenance)
+// Akashic    - Universal memory archive
+// ═══════════════════════════════════════════════════════════════
 
-// Engine
+// Engine (low-level)
 export { MemoryStore } from './engine'
 export type { BondHandle, MemoryHandle, MemoryStoreConfig } from './engine'
 
-// Mind
-export { createMind, Mind } from './mind'
-export type { BondView, MemoryView, MindConfig, RecallItem } from './mind'
+// Psyche (high-level consciousness)
+export { createMind, createPsyche, Mind, Psyche } from './mind'
+export type { BondView, MemoryView, MindConfig, PsycheConfig, RecallItem } from './mind'
+
+// Shell (maintenance layer)
+export {
+  AkashicRecords, computeAccessScore, MemoryAkashicBackend,
+  Morpheus
+} from './shell'
+
+export type {
+  AkashicBackend, AkashicRecord, AkashicRecordsConfig, DreamTaskType, MorpheusConfig,
+  MorpheusDeps
+} from './shell'
 

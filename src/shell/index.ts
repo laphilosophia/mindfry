@@ -1,9 +1,13 @@
 // ═══════════════════════════════════════════════════════════════
-// mindfry - Psyche Layer Exports
+// mindfry - Shell Layer Exports
 // ═══════════════════════════════════════════════════════════════
 
 export {
-  // Backwards compatibility
-  Mind, Psyche, createMind, createPsyche, type BondView, type MemoryView, type MindConfig, type PsycheConfig, type RecallItem
-} from './psyche';
+  AkashicRecords, computeAccessScore, MemoryAkashicBackend, type AkashicBackend, type AkashicRecord, type AkashicRecordsConfig
+} from './akashic'
+
+export {
+  Morpheus, type DreamTaskType, type MorpheusConfig,
+  type MorpheusDeps
+} from './morpheus'
 

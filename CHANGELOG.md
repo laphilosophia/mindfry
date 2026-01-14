@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-01-14
+
+### Added
+- **Morpheus** (God of Dreams): Background maintenance layer
+  - Event-hinted execution (not clock-driven)
+  - Self-managed queue (no external enqueue API)
+  - Atomic tasks: prune, transfer, consolidate (stub)
+- **AkashicRecords**: Cold storage persistence
+  - `inscribe()`: Memory → Archive
+  - `retrieve()`: Archive → Memory (with accessScore decay)
+  - MemoryAkashicBackend for testing
+- Mythological naming throughout
+
+### Changed
+- **Mind → Psyche**: Main class renamed (backwards compat alias kept)
+- **Dreamer → Morpheus**: Background scheduler renamed
+- **Archive → AkashicRecords**: Persistence layer renamed
+
 ## [0.2.1] - 2026-01-14
 
 ### Added

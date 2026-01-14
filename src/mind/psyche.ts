@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
-// mindfry - High-Performance Mind (v0.2.0)
+// mindfry - Psyche (Soul/Consciousness)
 //
+// High-performance consciousness container
 // Uint8Array storage + Priming-based auto-association
 // ═══════════════════════════════════════════════════════════════
 
@@ -10,7 +11,7 @@ import { MemoryStore, type BondHandle, type MemoryHandle, type MemoryStoreConfig
 // TYPES
 // ─────────────────────────────────────────────────────────────
 
-export interface MindConfig extends MemoryStoreConfig {
+export interface PsycheConfig extends MemoryStoreConfig {
   defaultThreshold?: number
   defaultDecayRate?: number
   primingDecay?: number
@@ -45,15 +46,15 @@ export interface RecallItem {
 }
 
 // ─────────────────────────────────────────────────────────────
-// MIND CLASS
+// PSYCHE CLASS (SOUL/CONSCIOUSNESS)
 // ─────────────────────────────────────────────────────────────
 
-export class Mind<T = unknown> {
+export class Psyche<T = unknown> {
   private readonly store: MemoryStore
   private readonly contents: Map<number, T>
-  private readonly config: Required<MindConfig>
+  private readonly config: Required<PsycheConfig>
 
-  constructor(config: MindConfig = {}) {
+  constructor(config: PsycheConfig = {}) {
     this.config = {
       maxMemories: config.maxMemories ?? 65536,
       maxBonds: config.maxBonds ?? 262144,
@@ -124,7 +125,6 @@ export class Mind<T = unknown> {
   // ─────────────────────────────────────────────────────────
 
   private autoAssociate(handle: MemoryHandle): void {
-    const now = this.config.clock()
     let bondCount = 0
 
     for (const targetIndex of this.store.topKConscious(
@@ -135,7 +135,7 @@ export class Mind<T = unknown> {
 
       const targetEnergy = this.store.getEnergy(targetIndex)
 
-      // Bond strength = target energy (proximity is implicit - they're conscious now)
+      // Bond strength = target energy
       const strength = targetEnergy
 
       const bondId = `auto_${handle.id}_${this.store.getMemoryId(targetIndex)}_${bondCount++}`
@@ -324,9 +324,14 @@ export class Mind<T = unknown> {
 }
 
 // ─────────────────────────────────────────────────────────────
-// FACTORY
+// FACTORY (backwards compat alias)
 // ─────────────────────────────────────────────────────────────
 
-export function createMind<T = unknown>(config?: MindConfig): Mind<T> {
-  return new Mind<T>(config)
+export function createPsyche<T = unknown>(config?: PsycheConfig): Psyche<T> {
+  return new Psyche<T>(config)
 }
+
+// Backwards compatibility
+export { createPsyche as createMind, Psyche as Mind }
+export type { PsycheConfig as MindConfig }
+

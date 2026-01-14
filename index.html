@@ -4,7 +4,7 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>mindfry - Demo</title>
+    <title>mindfry - Psyche Demo</title>
     <style>
       * {
         margin: 0;
@@ -25,17 +25,13 @@
         text-align: center;
         font-size: 1.25rem;
         margin-bottom: 1rem;
-        background: linear-gradient(90deg, #00d4ff, #7c3aed);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
       }
 
       .container {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 2rem;
-        max-width: 1400px;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        gap: 1rem;
         margin: 0 auto;
       }
 
@@ -44,10 +40,15 @@
         flex-direction: column;
         gap: 1rem;
         background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
         padding: 1.5rem;
-        max-height: calc(100% - 80px);
+      }
+
+      .graph-panel {
+        flex: 60% 0 0;
+      }
+
+      .control-panel {
+        flex: 40% 0 0;
       }
 
       .panel h2 {
@@ -62,7 +63,6 @@
         height: 100%;
         flex: 1;
         background: rgba(0, 0, 0, 0.3);
-        border-radius: 8px;
         position: relative;
         overflow: hidden;
       }
@@ -117,6 +117,17 @@
         gap: 0.75rem;
       }
 
+      .button-group {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .button-group button {
+        flex: 1;
+      }
+
       .control-group {
         display: flex;
         gap: 0.5rem;
@@ -127,14 +138,22 @@
       }
 
       button {
-        background: linear-gradient(135deg, #00d4ff 0%, #7c3aed 100%);
+        background: #af0b89;
+        /* background: linear-gradient(45deg, #00d4ff 0%, #7c3aed 100%); */
         border: none;
         padding: 0.75rem 1rem;
-        border-radius: 8px;
         color: white;
         font-weight: bold;
         cursor: pointer;
         font-size: 0.8rem;
+      }
+
+      .remember {
+        background: #af0b89;
+      }
+
+      .stimulate {
+        background: #7c3aed;
       }
 
       button:hover {
@@ -155,7 +174,6 @@
         background: rgba(0, 0, 0, 0.3);
         border: 1px solid rgba(255, 255, 255, 0.2);
         padding: 0.75rem;
-        border-radius: 8px;
         color: white;
         font-family: inherit;
       }
@@ -169,7 +187,6 @@
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         gap: 0.75rem;
-        margin-bottom: 1rem;
       }
 
       .perf-stats {
@@ -179,7 +196,6 @@
         margin-bottom: 1rem;
         background: rgba(124, 58, 237, 0.1);
         border: 1px solid rgba(124, 58, 237, 0.3);
-        border-radius: 8px;
         padding: 0.75rem;
       }
 
@@ -199,7 +215,6 @@
       .stat {
         background: rgba(0, 0, 0, 0.3);
         padding: 0.75rem;
-        border-radius: 8px;
         text-align: center;
       }
 
@@ -218,8 +233,7 @@
       .log {
         background: rgba(0, 0, 0, 0.3);
         padding: 1rem;
-        border-radius: 8px;
-        height: 160px;
+        height: 120px;
         overflow-y: auto;
         font-size: 0.7rem;
         line-height: 1.5;
@@ -244,14 +258,12 @@
       #selected-info {
         padding: 1rem;
         background: rgba(0, 0, 0, 0.3);
-        border-radius: 8px;
         min-height: 80px;
       }
 
       .energy-bar {
         height: 6px;
         background: rgba(255, 255, 255, 0.1);
-        border-radius: 3px;
         margin-top: 0.5rem;
         overflow: hidden;
       }
@@ -264,10 +276,8 @@
       .time-display {
         background: rgba(0, 0, 0, 0.4);
         padding: 0.5rem 1rem;
-        border-radius: 6px;
         font-size: 0.8rem;
         text-align: center;
-        margin-bottom: 1rem;
         color: #feca57;
       }
 
@@ -275,10 +285,10 @@
   </head>
 
   <body>
-    <h1>mindfry - Memory Management Demo</h1>
+    <h1>🧠🔥 mindfry <span style="font-size: 0.7em; opacity: 0.7">| Psyche · Morpheus · Akashic</span></h1>
 
     <div class="container">
-      <div class="panel">
+      <div class="panel graph-panel">
         <h2>Memory Graph</h2>
         <div id="graph"></div>
         <div id="selected-info">
@@ -286,7 +296,7 @@
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel control-panel">
         <div class="time-display">
           Virtual Time: <span id="virtual-time">Day 0, 00:00</span>
         </div>
@@ -327,11 +337,29 @@
           </div>
         </div>
 
+        <h2>Shell Layer</h2>
+        <div class="perf-stats" style="background: rgba(76, 175, 80, 0.1); border-color: rgba(76, 175, 80, 0.3);">
+          <div class="perf-stat">
+            <div class="stat-value" style="color: #4ade80;" id="shell-morpheus">😴</div>
+            <div class="stat-label">Morpheus</div>
+          </div>
+          <div class="perf-stat">
+            <div class="stat-value" style="color: #4ade80;" id="shell-akashic">0</div>
+            <div class="stat-label">Akashic Records</div>
+          </div>
+          <div class="perf-stat">
+            <div class="stat-value" style="color: #4ade80;" id="shell-pressure">0%</div>
+            <div class="stat-label">Pressure</div>
+          </div>
+        </div>
+
         <h2>Controls</h2>
         <div class="controls">
           <input type="text" id="memory-input" placeholder="Enter a thought..." />
-          <button id="btn-remember">Remember (New Memory)</button>
-          <button id="btn-stimulate">Stimulate Selected (+0.3 energy)</button>
+          <div class="button-group">
+            <button id="btn-remember" class="remember">Remember (New Memory)</button>
+            <button id="btn-stimulate" class="stimulate">Stimulate Selected (+0.3 energy)</button>
+          </div>
 
           <h2 style="margin-top: 0.5rem;">Time Skip</h2>
           <div class="control-group">
@@ -348,7 +376,7 @@
     </div>
 
     <script type="module">
-      import { createMind } from './dist/index.js'
+      import { createPsyche, Morpheus, AkashicRecords } from './dist/index.js'
 
       // ══════════════════════════════════════════════════════════════
       // VIRTUAL TIME SYSTEM
@@ -377,14 +405,14 @@
       }
 
       // ══════════════════════════════════════════════════════════════
-      // MIND CONFIGURATION
+      // PSYCHE CONFIGURATION
       // Realistic decay rate: ~1 day for energy to halve
       // ══════════════════════════════════════════════════════════════
 
       const HOUR = 1000 * 60 * 60
       const DAY = HOUR * 24
 
-      const mind = createMind({
+      const psyche = createPsyche({
         defaultThreshold: 0.3,
         // decay rate: ln(2) / half-life
         // half-life = 1 day → decayRate = 0.693 / 86400 ≈ 0.000008
@@ -392,6 +420,12 @@
         primingDecay: 0.4,
         clock
       })
+
+      // Shell Layer: Akashic Records + Morpheus
+      const akashic = new AkashicRecords({ clock })
+      // Note: Morpheus needs store access - for demo we just show concepts
+      let morpheusState = 'dormant'  // dormant, dreaming
+      let systemPressure = 0
 
       let selectedId = null
       let memoryCounter = 0
@@ -415,7 +449,7 @@
       function updateStats() {
         const start = performance.now()
         let conscious = 0, subconscious = 0, energy = 0
-        for (const m of mind.getAll()) {
+        for (const m of psyche.getAll()) {
           energy += m.energy
           if (m.isConscious) conscious++
           else subconscious++
@@ -436,10 +470,23 @@
         }
 
         // Store memory estimate: 4 bytes per memory, 4 bytes per bond
-        const storeBytes = mind.size * 4 + mind.getBonds().length * 4
+        const storeBytes = psyche.size * 4 + psyche.getBonds().length * 4
         document.getElementById('perf-store').textContent = storeBytes < 1024
           ? `${storeBytes} B`
           : `${(storeBytes / 1024).toFixed(1)} KB`
+
+        // Shell layer stats
+        const total = psyche.size || 1
+        systemPressure = conscious / total
+        morpheusState = systemPressure < 0.3 ? 'dreaming' : 'dormant'
+
+        document.getElementById('shell-morpheus').textContent = morpheusState === 'dreaming' ? '💤' : '😴'
+        document.getElementById('shell-pressure').textContent = `${(systemPressure * 100).toFixed(0)}%`
+
+        // Update Akashic count async
+        akashic.count().then(count => {
+          document.getElementById('shell-akashic').textContent = count
+        })
       }
 
       function getPosition(id) {
@@ -457,7 +504,7 @@
         const currentMemoryIds = new Set()
         const currentBondIds = new Set()
 
-        for (const memory of mind.getAll()) {
+        for (const memory of psyche.getAll()) {
           currentMemoryIds.add(memory.id)
           const pos = getPosition(memory.id)
 
@@ -481,7 +528,7 @@
           node.textContent = memory.content.text?.substring(0, 12) || memory.id
         }
 
-        for (const bond of mind.getBonds()) {
+        for (const bond of psyche.getBonds()) {
           currentBondIds.add(bond.id)
           const fromPos = positions.get(bond.from)
           const toPos = positions.get(bond.to)
@@ -524,7 +571,7 @@
 
       function updateSelectedInfo() {
         if (!selectedId) return
-        const memory = mind.getAll().find(m => m.id === selectedId)
+        const memory = psyche.getAll().find(m => m.id === selectedId)
         if (!memory) return
 
         document.getElementById('selected-info').innerHTML = `
@@ -559,7 +606,7 @@
         const text = document.getElementById('memory-input').value.trim() || `Memory ${++memoryCounter}`
         const id = `m${Date.now()}`
 
-        mind.remember(id, { text }, 1.0)
+        psyche.remember(id, { text }, 1.0)
 
         document.getElementById('memory-input').value = ''
         logEntry(`✓ Remembered: "${text}"`, 'stimulate')
@@ -572,10 +619,10 @@
           return
         }
 
-        const memory = mind.getAll().find(m => m.id === selectedId)
+        const memory = psyche.getAll().find(m => m.id === selectedId)
         if (memory) {
           const wasSubconscious = !memory.isConscious
-          mind.stimulate(selectedId, 0.3)
+          psyche.stimulate(selectedId, 0.3)
 
           if (wasSubconscious) {
             budget -= 5
@@ -615,18 +662,18 @@
       function init() {
         const ideas = ['Quantum', 'Neural', 'Graph', 'Memory', 'Decay']
         for (const idea of ideas) {
-          mind.remember(
+          psyche.remember(
             idea.toLowerCase(),
             { text: idea },
             0.7 + Math.random() * 0.3
           )
         }
 
-        mind.associate('b1', 'quantum', 'neural', 0.8)
-        mind.associate('b2', 'neural', 'graph', 0.7)
-        mind.associate('b3', 'graph', 'memory', 0.9)
-        mind.associate('b4', 'memory', 'decay', 0.6)
-        mind.associate('b5', 'decay', 'quantum', 0.5)
+        psyche.associate('b1', 'quantum', 'neural', 0.8)
+        psyche.associate('b2', 'neural', 'graph', 0.7)
+        psyche.associate('b3', 'graph', 'memory', 0.9)
+        psyche.associate('b4', 'memory', 'decay', 0.6)
+        psyche.associate('b5', 'decay', 'quantum', 0.5)
 
         updateTimeDisplay()
         refresh()
