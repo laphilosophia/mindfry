@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mindfry - Demo</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'SF Mono', 'Fira Code', monospace;
+        background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
+        color: #e0e0e0;
+        min-height: 100vh;
+        padding: 2rem;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(90deg, #00d4ff, #7c3aed);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .panel {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 1.5rem;
+      }
+
+      .panel h2 {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: #888;
+        margin-bottom: 1rem;
+      }
+
+      #graph {
+        width: 100%;
+        height: 400px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 8px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .node {
+        position: absolute;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: 0.7rem;
+        cursor: pointer;
+        border: 2px solid transparent;
+      }
+
+      .node.conscious {
+        background: rgba(0, 212, 255, 0.3);
+        border-color: #00d4ff;
+        box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+      }
+
+      .node.subconscious {
+        background: rgba(124, 58, 237, 0.2);
+        border-color: rgba(124, 58, 237, 0.5);
+        opacity: 0.5;
+      }
+
+      .node.selected {
+        border-width: 3px;
+        box-shadow: 0 0 30px rgba(0, 212, 255, 0.6);
+      }
+
+      .node:hover {
+        transform: scale(1.1);
+        z-index: 10;
+      }
+
+      .bond {
+        position: absolute;
+        height: 2px;
+        background: linear-gradient(90deg, rgba(0, 212, 255, 0.5), rgba(124, 58, 237, 0.5));
+        transform-origin: left center;
+        pointer-events: none;
+      }
+
+      .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .control-group {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .control-group button {
+        flex: 1;
+      }
+
+      button {
+        background: linear-gradient(135deg, #00d4ff 0%, #7c3aed 100%);
+        border: none;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 0.8rem;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      button.secondary {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      input {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 0.75rem;
+        border-radius: 8px;
+        color: white;
+        font-family: inherit;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: #00d4ff;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+      }
+
+      .stat {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 0.75rem;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      .stat-value {
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: #00d4ff;
+      }
+
+      .stat-label {
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        color: #888;
+      }
+
+      .log {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 1rem;
+        border-radius: 8px;
+        height: 120px;
+        overflow-y: auto;
+        font-size: 0.7rem;
+        line-height: 1.5;
+      }
+
+      .log-entry {
+        color: #888;
+      }
+
+      .log-entry.stimulate {
+        color: #00d4ff;
+      }
+
+      .log-entry.time {
+        color: #feca57;
+      }
+
+      .log-entry.surface {
+        color: #4ade80;
+      }
+
+      #selected-info {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 8px;
+        min-height: 80px;
+      }
+
+      .energy-bar {
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+        margin-top: 0.5rem;
+        overflow: hidden;
+      }
+
+      .energy-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #ff6b6b, #feca57, #4ade80);
+      }
+
+      .time-display {
+        background: rgba(0, 0, 0, 0.4);
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        text-align: center;
+        margin-bottom: 1rem;
+        color: #feca57;
+      }
+
+    </style>
+  </head>
+
+  <body>
+    <h1>mindfry - Memory Management Demo</h1>
+
+    <div class="container">
+      <div class="panel">
+        <h2>Memory Graph</h2>
+        <div id="graph"></div>
+        <div id="selected-info">
+          <p style="color: #888;">Click a node to see details</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="time-display">
+          Virtual Time: <span id="virtual-time">Day 0, 00:00</span>
+        </div>
+
+        <h2>Stats</h2>
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-value" id="stat-conscious">0</div>
+            <div class="stat-label">Conscious</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="stat-subconscious">0</div>
+            <div class="stat-label">Subconscious</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="stat-energy">0</div>
+            <div class="stat-label">Total Energy</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="stat-budget">100</div>
+            <div class="stat-label">Budget</div>
+          </div>
+        </div>
+
+        <h2>Controls</h2>
+        <div class="controls">
+          <input type="text" id="memory-input" placeholder="Enter a thought..." />
+          <button id="btn-remember">Remember (New Memory)</button>
+          <button id="btn-stimulate">Stimulate Selected (+0.3 energy)</button>
+
+          <h2 style="margin-top: 0.5rem;">Time Skip</h2>
+          <div class="control-group">
+            <button class="secondary" id="btn-1h">+1 Hour</button>
+            <button class="secondary" id="btn-6h">+6 Hours</button>
+            <button class="secondary" id="btn-1d">+1 Day</button>
+            <button class="secondary" id="btn-1w">+1 Week</button>
+          </div>
+        </div>
+
+        <h2 style="margin-top: 1rem;">Activity Log</h2>
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { createMind } from './dist/index.js'
+
+      // ══════════════════════════════════════════════════════════════
+      // VIRTUAL TIME SYSTEM
+      // Time skip instead of real-time decay
+      // ══════════════════════════════════════════════════════════════
+
+      let virtualTimeOffset = 0  // milliseconds offset from real time
+      const startTime = Date.now()
+
+      function clock() {
+        return startTime + virtualTimeOffset
+      }
+
+      function skipTime(ms) {
+        virtualTimeOffset += ms
+        updateTimeDisplay()
+        refresh()
+      }
+
+      function updateTimeDisplay() {
+        const totalHours = Math.floor(virtualTimeOffset / (1000 * 60 * 60))
+        const days = Math.floor(totalHours / 24)
+        const hours = totalHours % 24
+        document.getElementById('virtual-time').textContent =
+          `Day ${days}, ${hours.toString().padStart(2, '0')}:00`
+      }
+
+      // ══════════════════════════════════════════════════════════════
+      // MIND CONFIGURATION
+      // Realistic decay rate: ~1 day for energy to halve
+      // ══════════════════════════════════════════════════════════════
+
+      const HOUR = 1000 * 60 * 60
+      const DAY = HOUR * 24
+
+      const mind = createMind({
+        defaultThreshold: 0.3,
+        // decay rate: ln(2) / half-life
+        // half-life = 1 day → decayRate = 0.693 / 86400 ≈ 0.000008
+        defaultDecayRate: 0.000008,
+        primingDecay: 0.4,
+        clock
+      })
+
+      let selectedId = null
+      let memoryCounter = 0
+      let budget = 100
+
+      const nodeElements = new Map()
+      const bondElements = new Map()
+      const positions = new Map()
+
+      const graph = document.getElementById('graph')
+      const log = document.getElementById('log')
+
+      function logEntry(message, type = '') {
+        const entry = document.createElement('div')
+        entry.className = `log-entry ${type}`
+        entry.textContent = message
+        log.insertBefore(entry, log.firstChild)
+        while (log.children.length > 30) log.removeChild(log.lastChild)
+      }
+
+      function updateStats() {
+        let conscious = 0, subconscious = 0, energy = 0
+        for (const m of mind.all) {
+          energy += m.energy
+          if (m.isConscious) conscious++
+          else subconscious++
+        }
+        document.getElementById('stat-conscious').textContent = conscious
+        document.getElementById('stat-subconscious').textContent = subconscious
+        document.getElementById('stat-energy').textContent = energy.toFixed(2)
+        document.getElementById('stat-budget').textContent = budget
+      }
+
+      function getPosition(id) {
+        if (!positions.has(id)) {
+          const padding = 50
+          positions.set(id, {
+            x: padding + Math.random() * (graph.clientWidth - padding * 2),
+            y: padding + Math.random() * (graph.clientHeight - padding * 2)
+          })
+        }
+        return positions.get(id)
+      }
+
+      function updateGraph() {
+        const currentMemoryIds = new Set()
+        const currentBondIds = new Set()
+
+        for (const memory of mind.all) {
+          currentMemoryIds.add(memory.id)
+          const pos = getPosition(memory.id)
+
+          let node = nodeElements.get(memory.id)
+          if (!node) {
+            node = document.createElement('div')
+            node.className = 'node'
+            node.dataset.id = memory.id
+            node.style.left = `${pos.x - 40}px`
+            node.style.top = `${pos.y - 40}px`
+            node.addEventListener('click', () => selectMemory(memory.id))
+            graph.appendChild(node)
+            nodeElements.set(memory.id, node)
+          }
+
+          const energy = memory.energy
+          const isConscious = memory.isConscious
+
+          node.className = `node ${isConscious ? 'conscious' : 'subconscious'} ${memory.id === selectedId ? 'selected' : ''}`
+          node.style.opacity = Math.max(0.3, energy).toString()
+          node.textContent = memory.content.text?.substring(0, 12) || memory.id
+        }
+
+        for (const bond of mind.bonds) {
+          currentBondIds.add(bond.id)
+          const fromPos = positions.get(bond.from)
+          const toPos = positions.get(bond.to)
+          if (!fromPos || !toPos) continue
+
+          let bondEl = bondElements.get(bond.id)
+          if (!bondEl) {
+            bondEl = document.createElement('div')
+            bondEl.className = 'bond'
+            graph.insertBefore(bondEl, graph.firstChild)
+            bondElements.set(bond.id, bondEl)
+          }
+
+          const dx = toPos.x - fromPos.x
+          const dy = toPos.y - fromPos.y
+          const length = Math.sqrt(dx * dx + dy * dy)
+          const angle = Math.atan2(dy, dx) * 180 / Math.PI
+
+          bondEl.style.left = `${fromPos.x}px`
+          bondEl.style.top = `${fromPos.y}px`
+          bondEl.style.width = `${length}px`
+          bondEl.style.transform = `rotate(${angle}deg)`
+          bondEl.style.opacity = Math.max(0.1, bond.effectiveStrength).toString()
+        }
+
+        for (const [id, node] of nodeElements) {
+          if (!currentMemoryIds.has(id)) {
+            node.remove()
+            nodeElements.delete(id)
+          }
+        }
+
+        for (const [id, bondEl] of bondElements) {
+          if (!currentBondIds.has(id)) {
+            bondEl.remove()
+            bondElements.delete(id)
+          }
+        }
+      }
+
+      function updateSelectedInfo() {
+        if (!selectedId) return
+        const memory = mind.all.find(m => m.id === selectedId)
+        if (!memory) return
+
+        document.getElementById('selected-info').innerHTML = `
+        <strong>${memory.content.text || memory.id}</strong>
+        <p>Energy: ${memory.energy.toFixed(3)} / Threshold: ${memory.threshold.toFixed(2)}</p>
+        <div class="energy-bar">
+          <div class="energy-fill" style="width: ${Math.min(100, memory.energy * 100)}%"></div>
+        </div>
+        <p style="margin-top: 0.5rem; color: ${memory.isConscious ? '#4ade80' : '#ff6b6b'}">
+          ${memory.isConscious ? '✓ Conscious' : '✗ Subconscious (costs budget to surface)'}
+        </p>
+      `
+      }
+
+      function selectMemory(id) {
+        selectedId = id
+        updateSelectedInfo()
+        updateGraph()
+      }
+
+      function refresh() {
+        updateStats()
+        updateGraph()
+        if (selectedId) updateSelectedInfo()
+      }
+
+      // ══════════════════════════════════════════════════════════════
+      // EVENT HANDLERS
+      // ══════════════════════════════════════════════════════════════
+
+      document.getElementById('btn-remember').addEventListener('click', () => {
+        const text = document.getElementById('memory-input').value.trim() || `Memory ${++memoryCounter}`
+        const id = `m${Date.now()}`
+
+        mind.remember({ id, content: { text }, energy: 1.0 })
+
+        const others = mind.all.filter(m => m.id !== id)
+        if (others.length > 0) {
+          const target = others[Math.floor(Math.random() * others.length)]
+          mind.associate({
+            id: `b${Date.now()}`,
+            from: id,
+            to: target.id,
+            strength: 0.5 + Math.random() * 0.5
+          })
+        }
+
+        document.getElementById('memory-input').value = ''
+        logEntry(`✓ Remembered: "${text}"`, 'stimulate')
+        refresh()
+      })
+
+      document.getElementById('btn-stimulate').addEventListener('click', () => {
+        if (!selectedId) {
+          logEntry('⚠ No memory selected', '')
+          return
+        }
+
+        const memory = mind.all.find(m => m.id === selectedId)
+        if (memory) {
+          const wasSubconscious = !memory.isConscious
+          memory.stimulate({ energy: 0.3 })
+
+          if (wasSubconscious && memory.isConscious) {
+            budget -= 5
+            logEntry(`↑ Surfaced "${memory.content.text}" (cost: 5 budget)`, 'surface')
+          } else {
+            logEntry(`⚡ Stimulated "${memory.content.text}"`, 'stimulate')
+          }
+        }
+        refresh()
+      })
+
+      // Time skip buttons
+      document.getElementById('btn-1h').addEventListener('click', () => {
+        skipTime(HOUR)
+        logEntry(`⏭ Skipped 1 hour`, 'time')
+      })
+
+      document.getElementById('btn-6h').addEventListener('click', () => {
+        skipTime(6 * HOUR)
+        logEntry(`⏭ Skipped 6 hours`, 'time')
+      })
+
+      document.getElementById('btn-1d').addEventListener('click', () => {
+        skipTime(DAY)
+        logEntry(`⏭ Skipped 1 day`, 'time')
+      })
+
+      document.getElementById('btn-1w').addEventListener('click', () => {
+        skipTime(7 * DAY)
+        logEntry(`⏭ Skipped 1 week`, 'time')
+      })
+
+      // ══════════════════════════════════════════════════════════════
+      // INITIALIZE
+      // ══════════════════════════════════════════════════════════════
+
+      function init() {
+        const ideas = ['Quantum', 'Neural', 'Graph', 'Memory', 'Decay']
+        for (const idea of ideas) {
+          mind.remember({
+            id: idea.toLowerCase(),
+            content: { text: idea },
+            energy: 0.7 + Math.random() * 0.3
+          })
+        }
+
+        mind.associate({ id: 'b1', from: 'quantum', to: 'neural', strength: 0.8 })
+        mind.associate({ id: 'b2', from: 'neural', to: 'graph', strength: 0.7 })
+        mind.associate({ id: 'b3', from: 'graph', to: 'memory', strength: 0.9 })
+        mind.associate({ id: 'b4', from: 'memory', to: 'decay', strength: 0.6 })
+        mind.associate({ id: 'b5', from: 'decay', to: 'quantum', strength: 0.5 })
+
+        updateTimeDisplay()
+        refresh()
+        logEntry('Mind initialized with 5 memories', '')
+        logEntry('Use Time Skip to see decay effect', 'time')
+      }
+
+      init()
+    </script>
+  </body>
+
+</html>
