@@ -11,7 +11,7 @@ categories = ["database", "data-structures"]
 
 [lib]
 name = "mindfry"
-crate-type = ["cdylib", "rlib"]  # Both dynamic lib (for FFI/WASM) and static lib
+crate-type = ["cdylib", "rlib"] # Both dynamic lib (for FFI/WASM) and static lib
 
 # ═══════════════════════════════════════════════════════════════
 # DEPENDENCIES
@@ -81,6 +81,10 @@ harness = false
 name = "mindfry-server"
 path = "src/bin/server.rs"
 required-features = ["server"]
+
+[[bin]]
+name = "mfcli"
+path = "src/bin/mfcli.rs"
 
 # ═══════════════════════════════════════════════════════════════
 # PROFILE OPTIMIZATIONS

@@ -26,7 +26,11 @@ MindFry has been rewritten in Rust as a standalone Cognitive Database Engine.
   - Metadata indexing for fast listing
   - Named snapshots for Time Travel
 - **Benchmarks**: Criterion benchmarks for decay and graph operations
-- **Server binary**: TCP server entry point (placeholder for MFBP)
+- **TCP Server** (`mindfry-server`): Async Tokio server with MFBP protocol
+  - Connection handling with frame parsing
+  - Request logging for debugging
+  - Error response encoding
+- **CLI Client** (`mfcli`): Command-line interface for testing
 - **CEREBRO Design Doc**: GUI visualization specification
 
 ### Changed
