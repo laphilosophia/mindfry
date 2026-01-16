@@ -1,0 +1,96 @@
+[package]
+name = "mindfry-core"
+version = "0.1.0"
+edition = "2024"
+authors = ["Erdem Arslan <erdemarslan@ymail.com>"]
+description = "The World's First Ephemeral Graph Database - A Cognitive DB Engine"
+license = "MIT"
+repository = "https://github.com/laphilosophia/mindfry"
+keywords = ["database", "graph", "cognitive", "ephemeral", "decay"]
+categories = ["database", "data-structures"]
+
+[lib]
+name = "mindfry"
+crate-type = ["cdylib", "rlib"]  # Both dynamic lib (for FFI/WASM) and static lib
+
+# ═══════════════════════════════════════════════════════════════
+# DEPENDENCIES
+# ═══════════════════════════════════════════════════════════════
+
+[dependencies]
+# Persistence (Akashic Records)
+sled = "0.34"
+
+# Async Runtime (TCP Server)
+tokio = { version = "1", features = ["full"] }
+
+# Serialization (MFBP - MindFry Binary Protocol)
+bincode = "1.3"
+serde = { version = "1", features = ["derive"] }
+
+# Parallel Processing (Decay Engine)
+rayon = "1.10"
+
+# Time handling
+chrono = "0.4"
+
+# Logging & Tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Bit manipulation (flags)
+bitflags = { version = "2", features = ["serde"] }
+
+# Fast hashing for symbol table
+rustc-hash = "2"
+
+# String interning (symbol table)
+string-interner = "0.18"
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+proptest = "1"
+
+# ═══════════════════════════════════════════════════════════════
+# FEATURES
+# ═══════════════════════════════════════════════════════════════
+
+[features]
+default = ["server"]
+server = []          # TCP server binary
+wasm = []            # WASM target (disables server features)
+
+# ═══════════════════════════════════════════════════════════════
+# BENCHMARKS
+# ═══════════════════════════════════════════════════════════════
+
+[[bench]]
+name = "decay"
+harness = false
+
+[[bench]]
+name = "graph"
+harness = false
+
+# ═══════════════════════════════════════════════════════════════
+# BINARIES
+# ═══════════════════════════════════════════════════════════════
+
+[[bin]]
+name = "mindfry-server"
+path = "src/bin/server.rs"
+required-features = ["server"]
+
+# ═══════════════════════════════════════════════════════════════
+# PROFILE OPTIMIZATIONS
+# ═══════════════════════════════════════════════════════════════
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.bench]
+lto = true
+codegen-units = 1

@@ -1,130 +1,100 @@
-# 🧠🔥 mindfry
+# 🧠🔥 MindFry
 
-> Consciousness-inspired memory graph with lazy decay, auto-association, and mythological architecture
+> **The World's First Ephemeral Graph Database** — A Cognitive DB Engine built with Rust
 
-[![npm version](https://img.shields.io/npm/v/mindfry.svg)](https://www.npmjs.com/package/mindfry)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Features
+## What is MindFry?
 
-- **Psyche** 🦋 - High-performance consciousness container with Uint8Array storage
-- **Morpheus** 💤 - Event-driven background maintenance (God of Dreams)
-- **AkashicRecords** 📜 - Cold storage persistence layer (Eternal Memory)
-- **Lazy Decay** - Energy computed on-demand, zero idle CPU
-- **Auto-Association** - Priming-based automatic bonds
-- **25x Memory Reduction** - 4 bytes per memory vs ~100 bytes with objects
+MindFry is a **biologically-inspired database** that treats data as living neurons, not static records.
 
-## Installation
+| Feature            | Redis                    | Neo4j           | MindFry                               |
+| ------------------ | ------------------------ | --------------- | ------------------------------------- |
+| **Data Lifecycle** | TTL (binary: alive/dead) | Permanent       | **DecayRate** (gradient fade)         |
+| **Connections**    | None                     | Static RELATION | **Living BOND** (strengthens/weakens) |
+| **Memory Model**   | Key-Value                | Graph           | **Ephemeral Graph** with history      |
 
-```bash
-npm install mindfry
-```
+## Core Concepts
 
-## Quick Start
-
-```typescript
-import { createPsyche } from 'mindfry'
-
-// Create a consciousness container
-const psyche = createPsyche<{ text: string }>({
-  defaultThreshold: 0.3,
-  autoAssociate: true
-})
-
-// Remember something
-psyche.remember('idea-1', { text: 'Hello World' }, 1.0)
-
-// Stimulate with priming propagation
-psyche.stimulate('idea-1', 0.3)
-
-// Recall associated memories
-for (const item of psyche.recall('idea-1', 3)) {
-  console.log(item)
-}
-```
+- **Lineage**: A memory unit with energy, decay rate, and history
+- **Bond**: A living connection that strengthens with use, weakens without
+- **Engram**: Historical snapshot within a lineage's memory
+- **Psyche Arena**: Hot storage for active lineages
+- **Akashic Records**: Cold persistence layer
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────┐
-│                    mindfry                       │
-├─────────────────────────────────────────────────┤
-│  Psyche (Consciousness Container)               │
-│  ├─ Conscious (energy > threshold)              │
-│  └─ Subconscious (energy < threshold)           │
-├─────────────────────────────────────────────────┤
-│  Morpheus (Background Maintenance)              │
-│  ├─ Prune (dead bonds)                          │
-│  └─ Transfer (to AkashicRecords)                │
-├─────────────────────────────────────────────────┤
-│  AkashicRecords (Cold Storage)                  │
-│  ├─ inscribe() → persist                        │
-│  └─ retrieve() → reincarnate                    │
-└─────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                          MindFry Core (Rust)                        │
+├─────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐      │
+│  │   Psyche Arena  │  │   Bond Graph    │  │  Strata Arena   │      │
+│  │   (Lineages)    │  │   (Living)      │  │  (Engrams)      │      │
+│  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘      │
+│           └───────────────────┼─────────────────────┘               │
+│                               ▼                                      │
+│  ┌─────────────────────────────────────────────────────────────┐    │
+│  │                    Decay Engine (Rayon)                      │    │
+│  │    Background: decay computation, bond pruning               │    │
+│  └─────────────────────────────────────────────────────────────┘    │
+├─────────────────────────────────────────────────────────────────────┤
+│                        Protocol Layer                               │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                  │
+│  │ TCP (MFBP)  │  │    WASM     │  │     FFI     │                  │
+│  └─────────────┘  └─────────────┘  └─────────────┘                  │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-## API Reference
-
-### Psyche
-
-```typescript
-const psyche = createPsyche<T>(config?: PsycheConfig)
-
-// Core operations
-psyche.remember(id, content, energy?)     // Create memory
-psyche.associate(id, fromId, toId, strength?)  // Create bond
-psyche.stimulate(id, energyDelta, prime?) // Stimulate memory
-
-// Query
-psyche.get(id)              // Get conscious memory
-psyche.getAll()             // All memories
-psyche.getConscious()       // Conscious only
-psyche.getSubconscious()    // Subconscious only
-psyche.recall(id, depth?)   // Traverse graph
-
-// Surface
-psyche.surface(id)          // Bring to consciousness
-```
-
-### Morpheus
-
-```typescript
-const morpheus = new Morpheus(deps, config?)
-
-morpheus.notify('pressure-drop')  // Hint maintenance opportunity
-morpheus.notify('idle')           // System is idle
-morpheus.awaken()                 // Interrupt dreaming
-```
-
-### AkashicRecords
-
-```typescript
-const akashic = new AkashicRecords(config?)
-
-await akashic.inscribe(id, payload, energy, threshold, lastAccess)
-await akashic.retrieve(id)         // Returns AkashicRecord | null
-await akashic.exists(id)
-await akashic.erase(id)
-await akashic.count()
-```
-
-## Performance
-
-| Metric | Value |
-|--------|-------|
-| Memory per node | 4 bytes |
-| getEnergy() | O(1) LUT lookup |
-| topKConscious() | O(1) cached |
-| Idle CPU | 0% |
-| Bundle (ESM) | ~25 KB |
-
-## Build
+## Quick Start
 
 ```bash
-npm run build    # Build ESM/CJS/DTS
-npm run test     # Run tests
-npm run dev      # Watch mode
+cd mindfry-core
+cargo build --release
+cargo test --lib
 ```
+
+## Project Structure
+
+```
+mindfry/
+├── mindfry-core/           # Rust core engine
+│   ├── src/
+│   │   ├── arena/          # Psyche + Strata arenas
+│   │   ├── graph/          # Living bond graph
+│   │   ├── dynamics/       # Decay engine with LUT
+│   │   ├── protocol/       # MFBP (TCP binary protocol)
+│   │   └── persistence/    # Akashic Records (sled)
+│   └── benches/            # Criterion benchmarks
+├── legacy/                 # Original TypeScript implementation
+└── README.md
+```
+
+## Performance Goals
+
+| Metric                   | Target   |
+| ------------------------ | -------- |
+| Decay tick (1M lineages) | < 1ms    |
+| Bond lookup              | O(1)     |
+| Memory per lineage       | 32 bytes |
+| Memory per bond          | 24 bytes |
+
+## Roadmap
+
+- [x] **Phase 1**: Core Arenas (Psyche, Strata, Bonds, Decay)
+- [ ] **Phase 2**: MFBP Protocol (TCP binary)
+- [ ] **Phase 3**: Persistence (sled integration)
+- [ ] **Phase 4**: FFI/WASM bindings
+- [ ] **Phase 5**: Production hardening
+
+## Why Rust?
+
+| Concern        | TypeScript            | Rust                   |
+| -------------- | --------------------- | ---------------------- |
+| GC Latency     | 10-100ms spikes       | Zero                   |
+| Concurrency    | Single-threaded       | Multi-threaded (Rayon) |
+| Memory Control | TypedArray workaround | Native arenas          |
+| Embeddability  | Node.js only          | WASM, FFI (Python, Go) |
 
 ## License
 
