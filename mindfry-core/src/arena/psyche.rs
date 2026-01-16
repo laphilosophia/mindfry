@@ -367,7 +367,7 @@ mod tests {
         let mut arena = PsycheArena::with_capacity(100);
 
         let id1 = arena.alloc(Lineage::new(0.5));
-        let id2 = arena.alloc(Lineage::new(0.7));
+        let _id2 = arena.alloc(Lineage::new(0.7));
         assert_eq!(arena.len(), 2);
 
         // Free first lineage

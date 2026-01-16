@@ -87,7 +87,7 @@ pub struct StrataArena {
     /// Number of engrams per lineage (depth)
     depth: usize,
     /// Capacity (max lineages)
-    capacity: usize,
+    _capacity: usize,
 }
 
 impl StrataArena {
@@ -101,7 +101,7 @@ impl StrataArena {
         Self {
             data: vec![Engram::default(); total_size],
             depth,
-            capacity: max_lineages,
+            _capacity: max_lineages,
         }
     }
 
