@@ -39,9 +39,9 @@ MindFry has been rewritten in Rust as a standalone Cognitive Database Engine.
 - **Architecture**: Library → Database Engine
 - **Positioning**: "Memory Graph" → "Ephemeral Graph Database"
 
-### Moved
+### Removed
 
-- Original TypeScript implementation moved to `legacy/` directory
+- Legacy TypeScript implementation (superseded by Rust core)
 
 ### Technical Decisions (Cluster 127)
 
