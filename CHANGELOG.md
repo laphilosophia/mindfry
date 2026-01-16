@@ -15,6 +15,12 @@ MindFry has been rewritten in Rust as a standalone Cognitive Database Engine.
   - `StrataArena`: Ring buffer Engram history per lineage
   - `BondGraph`: Living bonds with Hebbian learning and decay
   - `DecayEngine`: Pre-computed LUT (256×32) for O(1) decay calculation
+- **MFBP Protocol v1.0**: Binary wire protocol (22 OpCodes)
+  - Lineage: `CREATE`, `GET`, `STIMULATE`, `FORGET`, `TOUCH`
+  - Bond: `CONNECT`, `REINFORCE`, `SEVER`, `NEIGHBORS`
+  - Query: `CONSCIOUS`, `TOP_K`, `TRAUMA`, `PATTERN`
+  - System: `PING`, `STATS`, `SNAPSHOT`, `RESTORE`, `FREEZE`, `PHYSICS_TUNE`
+  - Stream: `SUBSCRIBE`, `UNSUBSCRIBE`
 - **Benchmarks**: Criterion benchmarks for decay and graph operations
 - **Server binary**: TCP server entry point (placeholder for MFBP)
 - **CEREBRO Design Doc**: GUI visualization specification
