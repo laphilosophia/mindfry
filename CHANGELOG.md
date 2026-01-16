@@ -21,6 +21,10 @@ MindFry has been rewritten in Rust as a standalone Cognitive Database Engine.
   - Query: `CONSCIOUS`, `TOP_K`, `TRAUMA`, `PATTERN`
   - System: `PING`, `STATS`, `SNAPSHOT`, `RESTORE`, `FREEZE`, `PHYSICS_TUNE`
   - Stream: `SUBSCRIBE`, `UNSUBSCRIBE`
+- **Akashic Records**: sled-based persistence layer
+  - Snapshot/Restore: Full arena dumps with bincode serialization
+  - Metadata indexing for fast listing
+  - Named snapshots for Time Travel
 - **Benchmarks**: Criterion benchmarks for decay and graph operations
 - **Server binary**: TCP server entry point (placeholder for MFBP)
 - **CEREBRO Design Doc**: GUI visualization specification

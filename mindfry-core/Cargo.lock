@@ -492,6 +492,7 @@ dependencies = [
  "serde",
  "sled",
  "string-interner",
+ "tempfile",
  "tokio",
  "tracing",
  "tracing-subscriber",
