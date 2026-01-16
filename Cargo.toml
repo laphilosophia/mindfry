@@ -1,5 +1,5 @@
 [package]
-name = "mindfry-core"
+name = "mindfry"
 version = "0.1.0"
 edition = "2024"
 authors = ["Erdem Arslan <erdemarslan@ymail.com>"]
