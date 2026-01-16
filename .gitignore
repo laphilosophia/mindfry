@@ -29,5 +29,4 @@ coverage/
 .turbo/
 
 # Internals
-docs
 docs/
