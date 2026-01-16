@@ -3,6 +3,7 @@
 > **The World's First Ephemeral Graph Database** — A Cognitive DB Engine built with Rust
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://img.shields.io/badge/tests-38%20passing-brightgreen)]()
 
 ## What is MindFry?
 
@@ -14,19 +15,33 @@ MindFry is a **biologically-inspired database** that treats data as living neuro
 | **Connections**    | None                     | Static RELATION | **Living BOND** (strengthens/weakens) |
 | **Memory Model**   | Key-Value                | Graph           | **Ephemeral Graph** with history      |
 
+## Quick Start
+
+```bash
+# Run server
+cargo run --bin mindfry-server
+
+# In another terminal, test with CLI
+cargo run --bin mfcli -- ping
+cargo run --bin mfcli -- create fire 0.9
+cargo run --bin mfcli -- create ice 0.7
+cargo run --bin mfcli -- connect fire ice 0.8
+cargo run --bin mfcli -- stats
+```
+
 ## Core Concepts
 
 - **Lineage**: A memory unit with energy, decay rate, and history
 - **Bond**: A living connection that strengthens with use, weakens without
 - **Engram**: Historical snapshot within a lineage's memory
-- **Psyche Arena**: Hot storage for active lineages
-- **Akashic Records**: Cold persistence layer
+- **Psyche Arena**: Hot storage for active lineages (O(1) access)
+- **Akashic Records**: Cold persistence layer (sled)
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                          MindFry Core (Rust)                        │
+│                          MindFry (Rust)                             │
 ├─────────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐      │
 │  │   Psyche Arena  │  │   Bond Graph    │  │  Strata Arena   │      │
@@ -36,7 +51,6 @@ MindFry is a **biologically-inspired database** that treats data as living neuro
 │                               ▼                                      │
 │  ┌─────────────────────────────────────────────────────────────┐    │
 │  │                    Decay Engine (Rayon)                      │    │
-│  │    Background: decay computation, bond pruning               │    │
 │  └─────────────────────────────────────────────────────────────┘    │
 ├─────────────────────────────────────────────────────────────────────┤
 │                        Protocol Layer                               │
@@ -46,31 +60,35 @@ MindFry is a **biologically-inspired database** that treats data as living neuro
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-## Quick Start
-
-```bash
-cd mindfry-core
-cargo build --release
-cargo test --lib
-```
-
 ## Project Structure
 
 ```
 mindfry/
-├── mindfry-core/           # Rust core engine
-│   ├── src/
-│   │   ├── arena/          # Psyche + Strata arenas
-│   │   ├── graph/          # Living bond graph
-│   │   ├── dynamics/       # Decay engine with LUT
-│   │   ├── protocol/       # MFBP (TCP binary protocol)
-│   │   └── persistence/    # Akashic Records (sled)
-│   └── benches/            # Criterion benchmarks
-├── legacy/                 # Original TypeScript implementation
-└── README.md
+├── src/
+│   ├── arena/          # Psyche + Strata arenas
+│   ├── graph/          # Living bond graph
+│   ├── dynamics/       # Decay engine with LUT
+│   ├── protocol/       # MFBP (TCP binary protocol)
+│   ├── persistence/    # Akashic Records (sled)
+│   └── bin/            # Server + CLI binaries
+├── benches/            # Criterion benchmarks
+├── docs/               # Design documents
+└── Cargo.toml
 ```
 
-## Performance Goals
+## MFBP Protocol
+
+MindFry Binary Protocol - 22 OpCodes over TCP:
+
+| Category    | Commands                               |
+| ----------- | -------------------------------------- |
+| **Lineage** | CREATE, GET, STIMULATE, FORGET, TOUCH  |
+| **Bond**    | CONNECT, REINFORCE, SEVER, NEIGHBORS   |
+| **Query**   | CONSCIOUS, TOP_K, TRAUMA, PATTERN      |
+| **System**  | PING, STATS, SNAPSHOT, RESTORE, FREEZE |
+| **Stream**  | SUBSCRIBE, UNSUBSCRIBE                 |
+
+## Performance
 
 | Metric                   | Target   |
 | ------------------------ | -------- |
@@ -82,10 +100,10 @@ mindfry/
 ## Roadmap
 
 - [x] **Phase 1**: Core Arenas (Psyche, Strata, Bonds, Decay)
-- [ ] **Phase 2**: MFBP Protocol (TCP binary)
-- [ ] **Phase 3**: Persistence (sled integration)
-- [ ] **Phase 4**: FFI/WASM bindings
-- [ ] **Phase 5**: Production hardening
+- [x] **Phase 2**: MFBP Protocol (22 OpCodes)
+- [x] **Phase 3**: Persistence (Akashic Records)
+- [x] **Phase 4**: TCP Server + CLI
+- [ ] **Phase 5**: CEREBRO GUI (Commercial - Separate Repo)
 
 ## Why Rust?
 

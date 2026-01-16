@@ -10,7 +10,7 @@ MindFry has been rewritten in Rust as a standalone Cognitive Database Engine.
 
 ### Added
 
-- **mindfry-core**: Complete Rust implementation
+- **Core Engine**
   - `PsycheArena`: 32-byte cache-aligned Lineage storage with O(1) access
   - `StrataArena`: Ring buffer Engram history per lineage
   - `BondGraph`: Living bonds with Hebbian learning and decay
@@ -22,28 +22,25 @@ MindFry has been rewritten in Rust as a standalone Cognitive Database Engine.
   - System: `PING`, `STATS`, `SNAPSHOT`, `RESTORE`, `FREEZE`, `PHYSICS_TUNE`
   - Stream: `SUBSCRIBE`, `UNSUBSCRIBE`
 - **Akashic Records**: sled-based persistence layer
-  - Snapshot/Restore: Full arena dumps with bincode serialization
-  - Metadata indexing for fast listing
+  - Snapshot/Restore with bincode serialization
   - Named snapshots for Time Travel
-- **Benchmarks**: Criterion benchmarks for decay and graph operations
-- **TCP Server** (`mindfry-server`): Async Tokio server with MFBP protocol
-  - Connection handling with frame parsing
-  - Request logging for debugging
-  - Error response encoding
+- **TCP Server** (`mindfry-server`): Async Tokio server
 - **CLI Client** (`mfcli`): Command-line interface for testing
-- **CEREBRO Design Doc**: GUI visualization specification
+- **Benchmarks**: Criterion benchmarks for decay and graph operations
+- **CEREBRO Design Doc**: GUI visualization specification (commercial - separate repo)
 
 ### Changed
 
 - **Technology**: TypeScript → Rust
 - **Architecture**: Library → Database Engine
-- **Positioning**: "Memory Graph" → "Ephemeral Graph Database"
+- **Structure**: Flattened repo (no more `mindfry-core/` subfolder)
+- **Package**: Renamed `mindfry-core` → `mindfry`
 
 ### Removed
 
-- Legacy TypeScript implementation (superseded by Rust core)
+- Legacy TypeScript implementation
 
-### Technical Decisions (Cluster 127)
+### Technical Decisions
 
 | Decision    | Choice                   |
 | ----------- | ------------------------ |
