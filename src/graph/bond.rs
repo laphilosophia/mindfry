@@ -208,6 +208,12 @@ impl BondGraph {
         self.count == 0
     }
 
+    /// Get the maximum bond capacity
+    #[inline]
+    pub fn capacity(&self) -> usize {
+        self.bonds.capacity()
+    }
+
     /// Create a new bond
     pub fn connect(&mut self, bond: Bond) -> Option<BondId> {
         // Validate lineage IDs

@@ -9,10 +9,10 @@
 //! ┌─────────────────────────────────────────────────────────────────┐
 //! │                     Akashic Records                             │
 //! ├─────────────────────────────────────────────────────────────────┤
-//! │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐ │
-//! │  │    meta     │  │  snapshots  │  │        wal (future)     │ │
-//! │  │  (config)   │  │  (backups)  │  │  (write-ahead log)      │ │
-//! │  └─────────────┘  └─────────────┘  └─────────────────────────┘ │
+//! │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+//! │  │    meta     │  │  snapshots  │  │        wal (future)     │  │
+//! │  │  (config)   │  │  (backups)  │  │  (write-ahead log)      │  │
+//! │  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
 //! │                          │                                      │
 //! │                    ┌─────▼─────┐                                │
 //! │                    │   sled    │                                │
@@ -28,8 +28,8 @@
 
 mod akashic;
 mod indexer;
-mod snapshot;
+pub mod snapshot;
 
 pub use akashic::{AkashicConfig, AkashicError, AkashicStore};
 pub use indexer::LineageIndexer;
-pub use snapshot::{Snapshot, SnapshotMeta};
+pub use snapshot::{PhysicsSnapshot, Snapshot, SnapshotMeta};

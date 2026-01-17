@@ -16,6 +16,7 @@ use tokio::net::{TcpListener, TcpStream};
 use tracing::{Level, error, info, warn};
 use tracing_subscriber::FmtSubscriber;
 
+use mindfry::persistence::{AkashicConfig, AkashicStore};
 use mindfry::protocol::{CommandHandler, MfbpCodec, Request};
 use mindfry::{MindFry, MindFryConfig};
 
@@ -61,9 +62,38 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Parse args (simple for now)
     let server_config = ServerConfig::default();
 
-    // Create MindFry instance (shared across connections)
+    // ═══════════════════════════════════════════════════════════════
+    // RESURRECTION PROTOCOL
+    // ═══════════════════════════════════════════════════════════════
+
+    // 1. Mount Storage
+    let store_config = AkashicConfig::default();
+    let store = match AkashicStore::open(store_config) {
+        Ok(s) => {
+            info!("💾 Storage mounted: ./mindfry_data");
+            Arc::new(s)
+        }
+        Err(e) => {
+            error!("Failed to open storage: {}", e);
+            return Err(e.into());
+        }
+    };
+
+    // 2. Create MindFry with storage attached
     let db_config = MindFryConfig::default();
-    let db = Arc::new(RwLock::new(MindFry::with_config(db_config)));
+    let mut db = MindFry::with_config(db_config).with_store(Arc::clone(&store));
+
+    // 3. Attempt resurrection from latest snapshot
+    match db.resurrect() {
+        Ok(true) => info!("🧬 Resurrection successful"),
+        Ok(false) => info!("🌱 Genesis mode: Starting fresh"),
+        Err(e) => {
+            warn!("⚠️ Resurrection failed: {}. Starting fresh.", e);
+            // Graceful degradation - continue with empty state
+        }
+    }
+
+    let db = Arc::new(RwLock::new(db));
 
     info!(
         "Psyche Arena capacity: {} lineages",

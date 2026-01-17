@@ -445,15 +445,98 @@ impl CommandHandler {
             }
 
             Request::Snapshot { name } => {
-                // TODO: Implement snapshot with sled
-                Response::Ok(ResponseData::SnapshotCreated { name })
+                let db = self.db.read().unwrap();
+
+                // Check if store is attached
+                if let Some(ref store) = db.store {
+                    use crate::persistence::snapshot::PhysicsSnapshot;
+
+                    let physics = PhysicsSnapshot::default();
+
+                    match store.take_snapshot(
+                        Some(&name),
+                        &db.psyche,
+                        &db.strata,
+                        &db.bonds,
+                        Some(&db.cortex),
+                        physics,
+                    ) {
+                        Ok(meta) => {
+                            tracing::info!(
+                                "📸 Snapshot '{}' saved ({} lineages, {} bonds)",
+                                name,
+                                meta.lineage_count,
+                                meta.bond_count
+                            );
+                            Response::Ok(ResponseData::SnapshotCreated { name })
+                        }
+                        Err(e) => {
+                            tracing::error!("Failed to save snapshot: {}", e);
+                            Response::Error {
+                                code: ErrorCode::Internal,
+                                message: format!("Snapshot failed: {}", e),
+                            }
+                        }
+                    }
+                } else {
+                    // No store attached - just ack
+                    Response::Ok(ResponseData::SnapshotCreated { name })
+                }
             }
 
             Request::Restore { name } => {
-                // TODO: Implement restore with sled
-                Response::Error {
-                    code: ErrorCode::SnapshotNotFound,
-                    message: format!("Snapshot '{}' not found", name),
+                let mut db = self.db.write().unwrap();
+
+                if let Some(ref store) = db.store {
+                    // Find snapshot by name
+                    match store.get_snapshot_by_name(&name) {
+                        Ok(Some(snapshot)) => {
+                            // Restore arenas
+                            match store.restore_snapshot(
+                                &snapshot,
+                                db.psyche.capacity(),
+                                db.bonds.capacity(),
+                                64,
+                            ) {
+                                Ok((psyche, strata, bonds, _physics)) => {
+                                    db.psyche = psyche;
+                                    db.strata = strata;
+                                    db.bonds = bonds;
+
+                                    // Restore Cortex if available
+                                    if let Some(ref cortex_data) = snapshot.cortex_data {
+                                        if let Ok(cortex) = bincode::deserialize(cortex_data) {
+                                            db.cortex = cortex;
+                                        }
+                                    }
+
+                                    tracing::info!(
+                                        "🔄 Restored from snapshot '{}' ({} lineages)",
+                                        name,
+                                        db.psyche.len()
+                                    );
+                                    Response::Ok(ResponseData::Ack)
+                                }
+                                Err(e) => Response::Error {
+                                    code: ErrorCode::Internal,
+                                    message: format!("Restore failed: {}", e),
+                                },
+                            }
+                        }
+                        Ok(None) => Response::Error {
+                            code: ErrorCode::SnapshotNotFound,
+                            message: format!("Snapshot '{}' not found", name),
+                        },
+                        Err(e) => Response::Error {
+                            code: ErrorCode::Internal,
+                            message: format!("Restore error: {}", e),
+                        },
+                    }
+                } else {
+                    Response::Error {
+                        code: ErrorCode::Internal,
+                        message: "No storage attached".into(),
+                    }
                 }
             }
 

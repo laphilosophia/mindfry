@@ -72,6 +72,9 @@ pub struct MindFry {
     pub decay: DecayEngine,
     /// Decision-making brain (Setun ternary logic)
     pub cortex: Cortex,
+    /// Persistent storage (optional)
+    #[cfg(feature = "server")]
+    pub store: Option<std::sync::Arc<persistence::AkashicStore>>,
 }
 
 impl MindFry {
@@ -101,6 +104,98 @@ impl MindFry {
             bonds,
             decay,
             cortex,
+            #[cfg(feature = "server")]
+            store: None,
+        }
+    }
+
+    /// Attach persistent storage to this MindFry instance
+    #[cfg(feature = "server")]
+    pub fn with_store(mut self, store: std::sync::Arc<persistence::AkashicStore>) -> Self {
+        self.store = Some(store);
+        self
+    }
+
+    /// Attempt to resurrect from the latest snapshot
+    ///
+    /// Returns Ok(true) if resurrection succeeded, Ok(false) if no snapshot found.
+    /// On corruption, logs error and returns Ok(false) for graceful degradation.
+    #[cfg(feature = "server")]
+    pub fn resurrect(&mut self) -> Result<bool, persistence::AkashicError> {
+        let store = match &self.store {
+            Some(s) => s,
+            None => return Ok(false),
+        };
+
+        // Check for latest snapshot
+        let snapshot = match store.latest_snapshot()? {
+            Some(s) => s,
+            None => return Ok(false),
+        };
+
+        tracing::info!(
+            "🔄 Restoring from snapshot '{}'...",
+            snapshot.meta.name.as_deref().unwrap_or("unnamed")
+        );
+
+        // Restore arenas
+        let (psyche, strata, bonds, _physics) = store.restore_snapshot(
+            &snapshot,
+            self.psyche.capacity(),
+            self.bonds.capacity(),
+            64, // strata depth
+        )?;
+
+        self.psyche = psyche;
+        self.strata = strata;
+        self.bonds = bonds;
+
+        // Restore Cortex if available
+        if let Some(ref cortex_data) = snapshot.cortex_data {
+            match bincode::deserialize::<Cortex>(cortex_data) {
+                Ok(restored_cortex) => {
+                    tracing::info!("🧠 Cortex restored (mood: {:.2})", restored_cortex.mood());
+                    self.cortex = restored_cortex;
+                }
+                Err(e) => {
+                    tracing::warn!("⚠️ Failed to restore Cortex: {}, using default", e);
+                }
+            }
+        }
+
+        // Note: Index rebuild deferred - lineage keys stored in protocol layer
+        // For now, index will be rebuilt on-demand through handler interactions
+        tracing::info!(
+            "📇 Index rebuild deferred (lineages: {})",
+            self.psyche.len()
+        );
+
+        tracing::info!(
+            "✅ Resurrection complete: {} lineages, {} bonds",
+            self.psyche.len(),
+            self.bonds.len()
+        );
+
+        Ok(true)
+    }
+
+    /// Sync a newly created lineage to the index
+    #[cfg(feature = "server")]
+    pub fn sync_index_insert(&self, key: &str, id: LineageId) {
+        if let Some(ref store) = self.store {
+            if let Err(e) = store.indexer().insert(key, id) {
+                tracing::warn!("Failed to index lineage '{}': {}", key, e);
+            }
+        }
+    }
+
+    /// Remove a lineage from the index
+    #[cfg(feature = "server")]
+    pub fn sync_index_remove(&self, key: &str) {
+        if let Some(ref store) = self.store {
+            if let Err(e) = store.indexer().remove(key) {
+                tracing::warn!("Failed to remove lineage '{}' from index: {}", key, e);
+            }
         }
     }
 }

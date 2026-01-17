@@ -16,6 +16,10 @@ Nabu's identity (mood, personality) now survives server restarts.
 - **`LineageIndexer`**: O(1) key-to-id lookup via sled tree
   - `insert()`, `get()`, `remove()`, `rebuild()` methods
   - Integrated into `AkashicStore` with `indexer()` accessor
+- **Resurrection Protocol**: Server boot restores from latest snapshot
+  - `MindFry::resurrect()` - restore Cortex + Lineages + Bonds
+  - `MindFry::with_store()` - attach persistent storage
+  - Graceful degradation on corrupted snapshots
 
 ### Changed
 
