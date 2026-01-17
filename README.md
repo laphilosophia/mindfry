@@ -2,7 +2,7 @@
 
 > **The World's First Ephemeral Graph Database** — A Cognitive DB Engine built with Rust
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: BSL](https://img.shields.io/badge/License-BSL-blue.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-38%20passing-brightgreen)]()
 
 ## What is MindFry?
