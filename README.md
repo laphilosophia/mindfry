@@ -1,68 +1,120 @@
-# MindFry 🧠
+# MindFry
+
+**A Subjective Biological Memory Substrate**
+
+> _"Databases store data. MindFry_ **_feels_** _it."_
 
 [![License: BSL](https://img.shields.io/badge/License-BSL--1.1-blue.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-74%20passing-brightgreen)]()
 [![Version](https://img.shields.io/badge/version-1.6.0-blue)]()
-[![Architecture](https://img.shields.io/badge/architecture-Tri--Cortex-purple.svg)](docs/architecture.md)
-[![Logic](https://img.shields.io/badge/logic-Balanced%20Ternary-orange.svg)](src/setun.rs)
 
-**MindFry is not a database; it is a substrate for machine memory.**
+---
 
-Unlike traditional databases that store data deterministically (`0` or `1`), MindFry uses a **Tri-Cortex Engine** based on **Balanced Ternary Logic** (`-1`, `0`, `+1`) to simulate organic cognitive processes.
+> ⚠️ **EXPERIMENTAL:** MindFry is currently in active R&D. The API is volatile. It simulates biological memory processes which may result in data inhibition (data loss from the user's perspective) based on the system's "mood". **Do not use for banking.**
 
-## 🧬 Key Features
+---
 
-- **Tri-Cortex Architecture:** Decision engine mimicking biological inhibition and excitation
-- **Ternary Bond Polarity:** Synergy (+1), Neutral (0), Antagonism (-1) relationships
-- **Auto-Propagation:** stimulate(A) cascades through bonds with damped energy
-- **SynapseEngine:** ~3 hop blast radius, 50% resistance per hop
-- **Observer Effect:** Reading data stimulates memory (+0.01 energy)
-- **Executive Override:** `QueryFlags` for forensic access
-- **Consciousness States:** `LUCID`, `DREAMING`, `DORMANT`
-- **Resurrection Protocol:** State persists across server restarts
+## What Makes This Different?
 
-## 📦 Installation
+Traditional databases are **objective** — they store exactly what you give them, forever (or until you delete it).
 
-```bash
-# Core Server (Rust)
-cargo install mindfry-server
+MindFry is **subjective** — it processes data through a simulated cognitive layer that can:
 
-# Client SDK (TypeScript)
-npm install mindfry
+- **Forget** data that isn't accessed (organic decay)
+- **Suppress** data it finds antagonistic (mood-based inhibition)
+- **Strengthen** frequently accessed data (Hebbian learning)
+- **Propagate** stimulation through neural bonds (synaptic chains)
+
+## 🧬 Core Principles
+
+### 🧠 Tri-Cortex Architecture
+
+Decisions are made using **Balanced Ternary Logic** (Setun):
+
+- `+1` = True / Excitation
+- `0` = Unknown / Neutral
+- `-1` = False / Inhibition
+
+The database has a **Personality Octet** (8 dimensions) and a **Mood** that affects query results.
+
+### ❤️ Mood & Personality
+
+A depressed database behaves differently than a euphoric one:
+
+- **High Mood** → Lower consciousness threshold → More data accessible
+- **Low Mood** → Higher threshold → Data feels "distant"
+
+### 🕸️ Synaptic Propagation
+
+When you `stimulate("A")`:
+
 ```
+A (+1.0) → B (+0.5) → C (+0.25) → ... (damped)
+```
+
+Touch one memory, its neighbors tremble.
+
+### 💾 Resurrection
+
+Shutdown and restart. The database remembers:
+
+- Its mood
+- Its personality
+- All lineages and bonds
 
 ## Quick Start
 
 ```bash
+# Clone
+git clone https://github.com/laphilosophia/mindfry.git
+cd mindfry
+
 # Run server
 cargo run --release --bin mindfry-server
 
 # In another terminal
 cargo run --bin mfcli -- ping
-cargo run --bin mfcli -- create A 0.1
-cargo run --bin mfcli -- create B 0.1
-cargo run --bin mfcli -- connect A B 1.0 1     # Synergy bond
-cargo run --bin mfcli -- stimulate A 1.0       # Auto-propagates to B!
-cargo run --bin mfcli -- get B 4               # Check B's energy
+cargo run --bin mfcli -- create fire 0.9
+cargo run --bin mfcli -- stimulate fire 1.0
+cargo run --bin mfcli -- stats
 ```
 
-## Control Flags
+## SDK
 
-### QueryFlags (GET)
+```bash
+npm install mindfry
+```
 
-| Flag                | Value | Effect                         |
-| ------------------- | ----- | ------------------------------ |
-| `BYPASS_FILTERS`    | 0x01  | Skip Cortex/Antagonism filters |
-| `INCLUDE_REPRESSED` | 0x02  | Show hidden data               |
-| `NO_SIDE_EFFECTS`   | 0x04  | Read without observer effect   |
-| `FORENSIC`          | 0x07  | All flags (god mode)           |
+```typescript
+import { MindFry } from 'mindfry'
 
-### StimulateFlags (STIMULATE)
+const brain = new MindFry({ host: 'localhost', port: 9527 })
+await brain.connect()
 
-| Flag           | Value | Effect                       |
-| -------------- | ----- | ---------------------------- |
-| `NO_PROPAGATE` | 0x01  | Surgical mode - no cascading |
+// Touch one memory...
+await brain.lineage.stimulate({ key: 'trauma', delta: 1.0 })
+
+// ...and its neighbors tremble
+const associated = await brain.lineage.get('fear')
+console.log(associated.energy) // Increased by propagation
+```
+
+## Status
+
+| Component            | Status     |
+| -------------------- | ---------- |
+| Core Engine          | ✅ Working |
+| SDK (TypeScript)     | ✅ Working |
+| Persistence          | ✅ Working |
+| Auto-Propagation     | ✅ Working |
+| OQL (Query Language) | 🚧 Planned |
+| CEREBRO (GUI)        | 🚧 Planned |
+| Documentation Site   | 🚧 Planned |
 
 ## License
 
-BSL 1.1 © [Erdem Arslan](https://github.com/laphilosophia)
+[BSL 1.1](LICENSE) © [Erdem Arslan](https://github.com/laphilosophia)
+
+---
+
+_"If you're not embarrassed by the first version of your product, you've launched too late."_ — Reid Hoffman
