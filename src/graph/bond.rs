@@ -288,21 +288,21 @@ impl BondGraph {
 
     /// Remove a bond
     pub fn disconnect(&mut self, id: BondId) -> bool {
-        if let Some(bond) = self.bonds.get_mut(id.index())
-            && bond.is_active()
-        {
-            // Remove from adjacency lists
-            if let Some(adj) = self.adjacency.get_mut(bond.source.index()) {
-                adj.retain(|&bid| bid != id);
-            }
-            if let Some(adj) = self.adjacency.get_mut(bond.target.index()) {
-                adj.retain(|&bid| bid != id);
-            }
+        if let Some(bond) = self.bonds.get_mut(id.index()) {
+            if bond.is_active() {
+                // Remove from adjacency lists
+                if let Some(adj) = self.adjacency.get_mut(bond.source.index()) {
+                    adj.retain(|&bid| bid != id);
+                }
+                if let Some(adj) = self.adjacency.get_mut(bond.target.index()) {
+                    adj.retain(|&bid| bid != id);
+                }
 
-            bond.flags.remove(BondFlags::ACTIVE);
-            self.free_list.push(id);
-            self.count -= 1;
-            return true;
+                bond.flags.remove(BondFlags::ACTIVE);
+                self.free_list.push(id);
+                self.count -= 1;
+                return true;
+            }
         }
         false
     }
@@ -320,10 +320,10 @@ impl BondGraph {
         };
 
         for &bond_id in search_in {
-            if let Some(bond) = self.get(bond_id)
-                && bond.other(if find_target == b { a } else { b }) == find_target
-            {
-                return Some(bond_id);
+            if let Some(bond) = self.get(bond_id) {
+                if bond.other(if find_target == b { a } else { b }) == find_target {
+                    return Some(bond_id);
+                }
             }
         }
         None

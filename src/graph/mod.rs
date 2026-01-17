@@ -6,4 +6,4 @@
 
 mod bond;
 
-pub use bond::{Bond, BondId, BondFlags, BondGraph, BOND_PRUNE_THRESHOLD};
+pub use bond::{Bond, BondFlags, BondGraph, BondId, BOND_PRUNE_THRESHOLD};

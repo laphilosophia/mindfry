@@ -13,7 +13,7 @@ use std::sync::{Arc, RwLock};
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
-use tracing::{Level, error, info, warn};
+use tracing::{error, info, warn, Level};
 use tracing_subscriber::FmtSubscriber;
 
 use mindfry::persistence::{AkashicConfig, AkashicStore};

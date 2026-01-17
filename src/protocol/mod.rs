@@ -19,12 +19,12 @@
 
 #![allow(missing_docs)]
 
-mod opcodes;
-mod message;
 mod codec;
 mod handler;
+mod message;
+mod opcodes;
 
-pub use opcodes::*;
-pub use message::*;
 pub use codec::{MfbpCodec, MfbpError};
 pub use handler::CommandHandler;
+pub use message::*;
+pub use opcodes::*;

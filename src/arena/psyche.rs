@@ -266,13 +266,13 @@ impl PsycheArena {
 
     /// Delete a lineage
     pub fn free(&mut self, id: LineageId) -> bool {
-        if let Some(lineage) = self.data.get_mut(id.index())
-            && lineage.is_active()
-        {
-            lineage.flags.remove(LineageFlags::ACTIVE);
-            self.free_list.push(id);
-            self.count -= 1;
-            return true;
+        if let Some(lineage) = self.data.get_mut(id.index()) {
+            if lineage.is_active() {
+                lineage.flags.remove(LineageFlags::ACTIVE);
+                self.free_list.push(id);
+                self.count -= 1;
+                return true;
+            }
         }
         false
     }

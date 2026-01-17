@@ -121,12 +121,7 @@ impl StrataArena {
     ///
     /// Returns the global index of the new engram, and updates
     /// the head_index that should be stored in the Lineage.
-    pub fn record(
-        &mut self,
-        lineage: LineageId,
-        current_head: u32,
-        engram: Engram,
-    ) -> u32 {
+    pub fn record(&mut self, lineage: LineageId, current_head: u32, engram: Engram) -> u32 {
         let base = self.base_index(lineage);
 
         // Find next slot using ring buffer logic

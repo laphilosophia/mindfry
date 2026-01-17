@@ -30,9 +30,7 @@ fn bench_bond_graph_neighbors(c: &mut Criterion) {
 
     c.bench_function("bond_graph_neighbors_lookup", |b| {
         b.iter(|| {
-            let neighbors: Vec<_> = graph
-                .neighbors_with_strength(LineageId(50))
-                .collect();
+            let neighbors: Vec<_> = graph.neighbors_with_strength(LineageId(50)).collect();
             black_box(neighbors.len())
         })
     });
@@ -48,9 +46,7 @@ fn bench_bond_find(c: &mut Criterion) {
     }
 
     c.bench_function("bond_find_between", |b| {
-        b.iter(|| {
-            black_box(graph.find_bond(LineageId(25), LineageId(75)))
-        })
+        b.iter(|| black_box(graph.find_bond(LineageId(25), LineageId(75))))
     });
 }
 

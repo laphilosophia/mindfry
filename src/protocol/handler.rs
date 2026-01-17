@@ -7,12 +7,12 @@ use std::hash::{Hash, Hasher};
 use std::sync::{Arc, RwLock};
 use std::time::Instant;
 
-use crate::MindFry;
 use crate::arena::Lineage;
 use crate::graph::Bond;
+use crate::MindFry;
 
-use super::Request;
 use super::message::*;
+use super::Request;
 
 /// Command handler for MFBP requests
 pub struct CommandHandler {

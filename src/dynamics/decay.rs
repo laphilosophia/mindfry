@@ -6,7 +6,7 @@
 use rayon::prelude::*;
 
 use crate::arena::{Lineage, PsycheArena};
-use crate::graph::{BOND_PRUNE_THRESHOLD, BondGraph};
+use crate::graph::{BondGraph, BOND_PRUNE_THRESHOLD};
 
 /// Decay engine configuration
 #[derive(Debug, Clone)]
@@ -210,7 +210,7 @@ impl DecayEngine {
         psyche: &mut PsycheArena,
         cortex: &mut crate::setun::Cortex,
     ) -> GcResult {
-        use crate::setun::{Trit, dimension};
+        use crate::setun::{dimension, Trit};
 
         let mut processed = 0;
         let mut retained = 0; // Healthy, stay alive
@@ -370,7 +370,7 @@ mod tests {
 
     #[test]
     fn test_process_gc_with_retention() {
-        use crate::setun::{Cortex, Octet, Trit, dimension};
+        use crate::setun::{dimension, Cortex, Octet, Trit};
 
         let engine = DecayEngine::default();
         let mut psyche = PsycheArena::with_capacity(100);

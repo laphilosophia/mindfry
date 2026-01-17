@@ -2,15 +2,13 @@
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use mindfry::arena::{Lineage, PsycheArena};
-use mindfry::dynamics::{DecayEngine, DecayConfig};
+use mindfry::dynamics::{DecayConfig, DecayEngine};
 
 fn bench_decay_lut_lookup(c: &mut Criterion) {
     let engine = DecayEngine::default();
 
     c.bench_function("decay_lut_lookup", |b| {
-        b.iter(|| {
-            black_box(engine.decay_factor(0.001, 100.0))
-        })
+        b.iter(|| black_box(engine.decay_factor(0.001, 100.0)))
     });
 }
 
@@ -18,9 +16,7 @@ fn bench_lineage_current_energy(c: &mut Criterion) {
     let lineage = Lineage::with_config(0.8, 0.5, 0.001);
 
     c.bench_function("lineage_current_energy", |b| {
-        b.iter(|| {
-            black_box(lineage.current_energy())
-        })
+        b.iter(|| black_box(lineage.current_energy()))
     });
 }
 
@@ -48,9 +44,7 @@ fn bench_decay_tick_1m(c: &mut Criterion) {
     });
 
     c.bench_function("decay_tick_100k_lineages", |b| {
-        b.iter(|| {
-            black_box(engine.tick_psyche(&mut arena))
-        })
+        b.iter(|| black_box(engine.tick_psyche(&mut arena)))
     });
 }
 

@@ -258,7 +258,11 @@ impl Octet {
     #[inline]
     pub fn dissonance(&self, other: &Octet) -> f64 {
         let res = self.resonance(other);
-        if res < 0.0 { res.abs() } else { 0.0 }
+        if res < 0.0 {
+            res.abs()
+        } else {
+            0.0
+        }
     }
 
     /// Get a specific dimension by index

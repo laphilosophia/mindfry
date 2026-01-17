@@ -8,5 +8,5 @@
 mod psyche;
 mod strata;
 
-pub use psyche::{Lineage, LineageId, LineageFlags, PsycheArena};
+pub use psyche::{Lineage, LineageFlags, LineageId, PsycheArena};
 pub use strata::{Engram, StrataArena};

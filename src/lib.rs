@@ -87,7 +87,7 @@ impl MindFry {
 
     /// Create a new MindFry instance with custom configuration
     pub fn with_config(config: MindFryConfig) -> Self {
-        use setun::{Octet, Trit, dimension};
+        use setun::{dimension, Octet, Trit};
 
         let psyche = PsycheArena::with_capacity(config.max_lineages);
         let strata = StrataArena::with_capacity(config.max_lineages, config.strata_depth);
