@@ -1,21 +1,53 @@
-MIT License
+Business Source License 1.1
 
-Copyright (c) 2026 Erdem Arslan
+Licensor: Erdem Arslan
+Licensed Work: MindFry Core Engine
+Additional Use Grant: See below
+Change Date: 2028-01-01
+Change License: Apache License, Version 2.0
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+---
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+## Grant of License
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Subject to the terms of this License, the Licensor hereby grants you a non-exclusive,
+worldwide, non-transferable, royalty-free license to use, copy, modify, and distribute
+the Licensed Work for non-production and non-commercial purposes.
+
+---
+
+## Additional Use Grant
+
+The Licensed Work may be used in production for:
+
+- Internal evaluation
+- Open-source projects
+- Non-commercial research and experimentation
+
+Commercial use, including but not limited to:
+
+- Offering the Licensed Work as part of a paid product or service
+- Providing it as a managed or hosted service
+- Embedding it into proprietary software distributed to third parties
+
+requires a separate commercial license.
+
+---
+
+## Change License
+
+On the Change Date listed above, this Licensed Work will automatically be made available
+under the terms of the Apache License, Version 2.0.
+
+---
+
+## No Trademark License
+
+This license does not grant rights to use the Licensor’s trademarks, service marks,
+or project name except for reasonable and customary use in describing the origin of the work.
+
+---
+
+## Disclaimer
+
+THE LICENSED WORK IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND.
