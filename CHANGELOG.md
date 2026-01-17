@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2026-01-17
+
+### 🧬 Cortex Persistence
+
+Nabu's identity (mood, personality) now survives server restarts.
+
+### Added
+
+- **Serde derives**: `Trit`, `Octet`, `Quantizer`, `Cortex`, `RetentionBuffer` now serializable
+- **`cortex_data` in Snapshot**: Optional Cortex state preserved in snapshots
+- **Mood-Coupled Sensitivity**: Consciousness sensitivity now varies with mood (0.5x-1.5x)
+
+### Changed
+
+- `take_snapshot()` now accepts optional `Cortex` parameter
+- Base consciousness sensitivity reduced from 10.0 to 5.0 for mood modulation
+
+### Internal
+
+- 66/66 tests passing
+- Backward compatible: old snapshots load with `cortex_data: None`
+
+---
+
 ## [1.2.1] - 2026-01-17
 
 ### 🔧 Bug Fix: Consciousness Threshold Tuning

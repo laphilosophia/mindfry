@@ -34,6 +34,8 @@ pub struct Snapshot {
     pub strata_data: Vec<u8>,
     /// Serialized BondGraph data
     pub bond_data: Vec<u8>,
+    /// Serialized Cortex state (mood, personality, quantizer)
+    pub cortex_data: Option<Vec<u8>>,
     /// Physics configuration at snapshot time
     pub physics_config: PhysicsSnapshot,
 }

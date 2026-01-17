@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use sled::{Db, Tree};
 
 use super::snapshot::{PhysicsSnapshot, Snapshot, SnapshotMeta};
-use crate::arena::{Lineage, PsycheArena, StrataArena, Engram};
+use crate::arena::{Engram, Lineage, PsycheArena, StrataArena};
 use crate::graph::{Bond, BondGraph};
 
 /// Akashic Store error types
@@ -143,6 +143,7 @@ impl AkashicStore {
         psyche: &PsycheArena,
         strata: &StrataArena,
         bonds: &BondGraph,
+        cortex: Option<&crate::Cortex>,
         physics: PhysicsSnapshot,
     ) -> Result<SnapshotMeta> {
         let snapshot_id = now_nanos();
@@ -151,6 +152,12 @@ impl AkashicStore {
         let psyche_data = self.serialize_psyche(psyche)?;
         let strata_data = self.serialize_strata(strata)?;
         let bond_data = self.serialize_bonds(bonds)?;
+
+        // Serialize Cortex if provided
+        let cortex_data = match cortex {
+            Some(c) => Some(bincode::serialize(c)?),
+            None => None,
+        };
 
         let meta = SnapshotMeta {
             id: snapshot_id,
@@ -167,6 +174,7 @@ impl AkashicStore {
             psyche_data,
             strata_data,
             bond_data,
+            cortex_data,
             physics_config: physics,
         };
 
@@ -273,10 +281,7 @@ impl AkashicStore {
 
     fn serialize_psyche(&self, psyche: &PsycheArena) -> Result<Vec<u8>> {
         // Collect active lineages with their IDs
-        let lineages: Vec<(u32, Lineage)> = psyche
-            .iter()
-            .map(|(id, l)| (id.0, *l))
-            .collect();
+        let lineages: Vec<(u32, Lineage)> = psyche.iter().map(|(id, l)| (id.0, *l)).collect();
 
         Ok(bincode::serialize(&lineages)?)
     }
@@ -289,10 +294,7 @@ impl AkashicStore {
 
     fn serialize_bonds(&self, bonds: &BondGraph) -> Result<Vec<u8>> {
         // Collect active bonds
-        let bond_list: Vec<Bond> = bonds
-            .iter()
-            .map(|(_, b)| *b)
-            .collect();
+        let bond_list: Vec<Bond> = bonds.iter().map(|(_, b)| *b).collect();
 
         Ok(bincode::serialize(&bond_list)?)
     }
@@ -381,8 +383,8 @@ fn now_nanos() -> u64 {
 mod tests {
     use super::*;
     use crate::arena::Lineage;
-    use crate::graph::Bond;
     use crate::arena::LineageId;
+    use crate::graph::Bond;
     use tempfile::tempdir;
 
     fn temp_config() -> AkashicConfig {
@@ -422,7 +424,14 @@ mod tests {
 
         // Take snapshot
         let meta = store
-            .take_snapshot(Some("test_snapshot"), &psyche, &strata, &bonds, physics)
+            .take_snapshot(
+                Some("test_snapshot"),
+                &psyche,
+                &strata,
+                &bonds,
+                None,
+                physics,
+            )
             .unwrap();
 
         assert_eq!(meta.name, Some("test_snapshot".to_string()));
@@ -431,9 +440,8 @@ mod tests {
 
         // Restore
         let snapshot = store.latest_snapshot().unwrap().unwrap();
-        let (restored_psyche, _restored_strata, restored_bonds, _physics) = store
-            .restore_snapshot(&snapshot, 100, 1000, 8)
-            .unwrap();
+        let (restored_psyche, _restored_strata, restored_bonds, _physics) =
+            store.restore_snapshot(&snapshot, 100, 1000, 8).unwrap();
 
         assert_eq!(restored_psyche.len(), 3);
         assert_eq!(restored_bonds.len(), 2);
@@ -451,15 +459,29 @@ mod tests {
 
         // Take multiple snapshots
         store
-            .take_snapshot(Some("snap1"), &psyche, &strata, &bonds, physics.clone())
+            .take_snapshot(
+                Some("snap1"),
+                &psyche,
+                &strata,
+                &bonds,
+                None,
+                physics.clone(),
+            )
             .unwrap();
         std::thread::sleep(std::time::Duration::from_millis(10));
         store
-            .take_snapshot(Some("snap2"), &psyche, &strata, &bonds, physics.clone())
+            .take_snapshot(
+                Some("snap2"),
+                &psyche,
+                &strata,
+                &bonds,
+                None,
+                physics.clone(),
+            )
             .unwrap();
         std::thread::sleep(std::time::Duration::from_millis(10));
         store
-            .take_snapshot(Some("snap3"), &psyche, &strata, &bonds, physics)
+            .take_snapshot(Some("snap3"), &psyche, &strata, &bonds, None, physics)
             .unwrap();
 
         let list = store.list_snapshots().unwrap();
@@ -480,7 +502,7 @@ mod tests {
         let physics = PhysicsSnapshot::default();
 
         store
-            .take_snapshot(Some("my_save"), &psyche, &strata, &bonds, physics)
+            .take_snapshot(Some("my_save"), &psyche, &strata, &bonds, None, physics)
             .unwrap();
 
         let snapshot = store.get_snapshot_by_name("my_save").unwrap();
@@ -502,7 +524,7 @@ mod tests {
         let physics = PhysicsSnapshot::default();
 
         let meta = store
-            .take_snapshot(Some("to_delete"), &psyche, &strata, &bonds, physics)
+            .take_snapshot(Some("to_delete"), &psyche, &strata, &bonds, None, physics)
             .unwrap();
 
         assert!(store.delete_snapshot(meta.id).unwrap());

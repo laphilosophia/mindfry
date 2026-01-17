@@ -22,6 +22,8 @@
 
 use std::ops::{Mul, Not};
 
+use serde::{Deserialize, Serialize};
+
 // ============================================================================
 // 1. THE ATOM: TRIT
 // ============================================================================
@@ -45,7 +47,7 @@ use std::ops::{Mul, Not};
 /// assert_eq!(!Trit::True, Trit::False);
 /// assert_eq!(!Trit::Unknown, Trit::Unknown);
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 #[repr(i8)]
 pub enum Trit {
     /// Inhibition / Rejection / Negative (-1)
@@ -198,7 +200,7 @@ pub mod dimension {
 /// let resonance = curious_aggressive.resonance(&calm_preserving);
 /// assert!(resonance < 0.0);
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct Octet {
     /// The 8 ternary dimensions
     pub values: [Trit; 8],
@@ -337,7 +339,7 @@ impl Default for Octet {
 /// // Stressed mood (-1.0): threshold rises to 0.6
 /// assert_eq!(q.quantize(0.55, -1.0), Trit::Unknown);
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Quantizer {
     base_threshold: f64,
 }
@@ -429,7 +431,7 @@ impl Default for Quantizer {
 /// cortex.shift_mood(-0.5);  // Become stressed
 /// assert!(cortex.mood() < 0.0);
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Cortex {
     /// The system's fixed personality (DNA)
     personality: Octet,
@@ -524,23 +526,30 @@ impl Cortex {
     /// - Unknown (0): Dreaming - semi-conscious (energy near threshold)
     /// - False (-1): Dormant - not conscious (energy below threshold)
     ///
+    /// **Mood-Coupled Sensitivity:**
+    /// - Euphoric mood (+1.0) → higher sensitivity (1.5x) → notices subtle changes
+    /// - Neutral mood (0.0) → base sensitivity (1.0x)
+    /// - Stressed mood (-1.0) → lower sensitivity (0.5x) → "numb" to stimuli
+    ///
     /// # Arguments
     /// * `energy` - Current energy level (0.0 to 1.0)
     /// * `threshold` - The lineage's consciousness threshold
     pub fn consciousness_state(&self, energy: f64, threshold: f64) -> Trit {
-        // Calculate how far above/below threshold we are
         let delta = energy - threshold;
 
-        // Amplify the delta to get clearer decisions
-        // A 10% margin above threshold should be clearly Lucid
-        // Formula: delta * (1 / margin) where margin = 0.1 (10%)
-        // So: 0.15 delta → 0.15 * 10 = 1.5 → clamped, clearly True
-        //     0.05 delta → 0.05 * 10 = 0.5 → above 0.33 threshold, True
-        //     0.02 delta → 0.02 * 10 = 0.2 → below 0.33, Unknown (Dreaming)
-        //    -0.10 delta → -0.10 * 10 = -1.0 → clearly False (Dormant)
-        const CONSCIOUSNESS_SENSITIVITY: f64 = 10.0; // 10% margin = decisive
-        let amplified = delta * CONSCIOUSNESS_SENSITIVITY;
+        // Dynamic Gain: Mood affects how sensitive we are to energy changes
+        // Base sensitivity of 5.0 gives cleaner mood modulation than 10.0
+        const BASE_SENSITIVITY: f64 = 5.0;
 
+        // Mood modifier: +1.0 mood → 1.5x, -1.0 mood → 0.5x
+        // Formula: 1.0 + (mood * 0.5) gives range [0.5, 1.5]
+        let sensitivity_modifier = 1.0 + (self.mood * 0.5);
+        let dynamic_gain = BASE_SENSITIVITY * sensitivity_modifier;
+
+        // Amplify signal with mood-adjusted gain
+        let amplified = delta * dynamic_gain;
+
+        // Quantizer also uses mood to shift thresholds (double modulation)
         self.quantizer.quantize(amplified, self.mood)
     }
 
@@ -598,7 +607,7 @@ impl Default for Cortex {
 /// buffer.restore(42);
 /// assert_eq!(buffer.pending_count(), 0);
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RetentionBuffer {
     /// Key: Lineage index, Value: Remaining TTL (ticks until deletion)
     pending_removals: std::collections::HashMap<usize, u8>,
@@ -928,21 +937,21 @@ mod tests {
 
     #[test]
     fn test_cortex_consciousness_state() {
-        let cortex = Cortex::default();
+        let cortex = Cortex::default(); // Neutral mood (0.0), gain = 5.0 * 1.0 = 5.0
 
-        // Well above threshold (0.9 - 0.5 = 0.4 * 10 = 4.0) → Lucid
+        // Well above threshold (0.9 - 0.5 = 0.4 * 5 = 2.0) → Lucid
         assert_eq!(cortex.consciousness_state(0.9, 0.5), Trit::True);
 
-        // Well below threshold (0.2 - 0.5 = -0.3 * 10 = -3.0) → Dormant
+        // Well below threshold (0.2 - 0.5 = -0.3 * 5 = -1.5) → Dormant
         assert_eq!(cortex.consciousness_state(0.2, 0.5), Trit::False);
 
-        // Slightly above threshold (0.55 - 0.5 = 0.05 * 10 = 0.5 > 0.33) → Lucid
-        assert_eq!(cortex.consciousness_state(0.55, 0.5), Trit::True);
+        // Above threshold but closer (0.6 - 0.5 = 0.1 * 5 = 0.5 > 0.33) → Lucid
+        assert_eq!(cortex.consciousness_state(0.6, 0.5), Trit::True);
 
-        // Very close to threshold (0.52 - 0.5 = 0.02 * 10 = 0.2 < 0.33) → Dreaming
+        // Very close to threshold (0.52 - 0.5 = 0.02 * 5 = 0.1 < 0.33) → Dreaming
         assert_eq!(cortex.consciousness_state(0.52, 0.5), Trit::Unknown);
 
-        // Fix for 0.95 bug: (0.95 - 0.8 = 0.15 * 10 = 1.5 > 0.33) → Lucid
+        // Fix for 0.95 bug: (0.95 - 0.8 = 0.15 * 5 = 0.75 > 0.33) → Lucid
         assert_eq!(cortex.consciousness_state(0.95, 0.8), Trit::True);
     }
 
