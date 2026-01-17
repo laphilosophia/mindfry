@@ -13,7 +13,6 @@
 
 # Rust build artifacts (we rebuild inside Docker)
 target/
-Cargo.lock
 
 # Documentation
 docs/
