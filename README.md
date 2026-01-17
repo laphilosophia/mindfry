@@ -64,6 +64,14 @@ Shutdown and restart. The database remembers:
 
 ## Quick Start
 
+### 🐳 Docker (Recommended)
+
+```bash
+docker run -d -p 9527:9527 ghcr.io/laphilosophia/mindfry:latest
+```
+
+### From Source
+
 ```bash
 # Clone
 git clone https://github.com/laphilosophia/mindfry.git

@@ -1,0 +1,33 @@
+# MindFry Docker Ignore
+# Exclude files not needed in Docker build
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Rust build artifacts (we rebuild inside Docker)
+target/
+Cargo.lock
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# CI/CD
+.github/
+
+# Data
+mindfry_data/
+*.db
+*.sled
+
+# Tests and benchmarks (not needed in production image)
+tests/
+examples/
