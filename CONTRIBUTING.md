@@ -89,4 +89,4 @@ Look for issues labeled `good first issue` - these are suitable for newcomers.
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the project's BSL license.
+By contributing, you agree that your contributions will be licensed under the project's Apache-2.0 license.

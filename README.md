@@ -4,7 +4,7 @@
 
 > _"Databases store data. MindFry_ **_feels_** _it."_
 
-[![License: BSL](https://img.shields.io/badge/License-BSL--1.1-blue.svg)](LICENSE)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-74%20passing-brightgreen)]()
 [![Version](https://img.shields.io/badge/version-1.6.0-blue)]()
 
@@ -121,7 +121,7 @@ console.log(associated.energy) // Increased by propagation
 
 ## License
 
-[BSL 1.1](LICENSE) © [Erdem Arslan](https://github.com/laphilosophia)
+[Apache-2.0](LICENSE) © [Erdem Arslan](https://github.com/laphilosophia)
 
 ---
 
