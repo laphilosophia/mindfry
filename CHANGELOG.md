@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2026-01-17
+
+### 🧠 Synaptic Evolution
+
+Bonds now have polarity for biologically-inspired signal propagation.
+
+### Added
+
+- **`Bond.polarity`**: Ternary bond type (+1/0/-1)
+  - `Trit::True` (+1): Synergy (excitatory) - both stimulate
+  - `Trit::Unknown` (0): Neutral (insulator) - no propagation
+  - `Trit::False` (-1): Antagonism (inhibitory) - suppression
+- **`SynapseEngine`**: Damped signal propagation
+  - Resistance: 0.5 (50% energy loss per hop)
+  - Cutoff: 0.1 (noise floor)
+  - Max depth: ~3 hops (mathematically bounded)
+  - Loop protection via visited set
+
+### Internal
+
+- 74/74 tests passing (+4 synapse tests)
+- Backward compatible: old bonds default to `polarity: Trit::True`
+
+---
+
 ## [1.3.0] - 2026-01-17
 
 ### 🧬 Cortex Persistence

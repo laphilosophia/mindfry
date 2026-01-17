@@ -85,10 +85,12 @@ impl MfbpCodec {
                 source,
                 target,
                 strength,
+                polarity,
             } => {
                 Self::write_string(&mut payload, source);
                 Self::write_string(&mut payload, target);
                 payload.extend_from_slice(&strength.to_le_bytes());
+                payload.push(*polarity as u8);
             }
             Request::BondReinforce {
                 source,
@@ -339,10 +341,17 @@ impl MfbpCodec {
                 let source = Self::read_string(payload, &mut cursor)?;
                 let target = Self::read_string(payload, &mut cursor)?;
                 let strength = Self::read_f32(payload, &mut cursor)?;
+                // Optional polarity (backward compat: default = 1 = synergy)
+                let polarity = if cursor < payload.len() {
+                    payload[cursor] as i8
+                } else {
+                    1 // Default: synergy (excitatory)
+                };
                 Request::BondConnect {
                     source,
                     target,
                     strength,
+                    polarity,
                 }
             }
             OpCode::BondReinforce => {
@@ -519,6 +528,7 @@ mod tests {
             source: "fire".into(),
             target: "heat".into(),
             strength: 0.9,
+            polarity: 1,
         };
         let encoded = MfbpCodec::encode_request(&request);
         let decoded = MfbpCodec::decode_request(&encoded).unwrap();
@@ -528,10 +538,12 @@ mod tests {
                 source,
                 target,
                 strength,
+                polarity,
             } => {
                 assert_eq!(source, "fire");
                 assert_eq!(target, "heat");
                 assert!((strength - 0.9).abs() < 0.001);
+                assert_eq!(polarity, 1);
             }
             _ => panic!("Expected BondConnect"),
         }

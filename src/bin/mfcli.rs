@@ -72,13 +72,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         "connect" => {
             if args.len() < 5 {
-                eprintln!("Usage: mfcli connect <source> <target> <strength>");
+                eprintln!("Usage: mfcli connect <source> <target> <strength> [polarity: 1|-1|0]");
                 return Ok(());
             }
+            let polarity: i8 = if args.len() > 5 {
+                args[5].parse().unwrap_or(1)
+            } else {
+                1 // Default: synergy
+            };
             Request::BondConnect {
                 source: args[2].clone(),
                 target: args[3].clone(),
                 strength: args[4].parse()?,
+                polarity,
             }
         }
         "neighbors" => {

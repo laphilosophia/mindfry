@@ -162,7 +162,10 @@ impl CommandHandler {
                 source,
                 target,
                 strength,
+                polarity,
             } => {
+                use crate::setun::Trit;
+
                 let mut db = self.db.write().unwrap();
                 let src_key = self.hash_key(&source);
                 let tgt_key = self.hash_key(&target);
@@ -187,7 +190,15 @@ impl CommandHandler {
                     }
                 };
 
-                let bond = Bond::new(src_id, tgt_id, strength);
+                let mut bond = Bond::new(src_id, tgt_id, strength);
+                // Apply polarity
+                bond.polarity = match polarity {
+                    1 => Trit::True,    // Synergy
+                    0 => Trit::Unknown, // Neutral
+                    -1 => Trit::False,  // Antagonism
+                    _ => Trit::True,    // Default to synergy
+                };
+
                 match db.bonds.connect(bond) {
                     Some(_) => Response::Ok(ResponseData::Ack),
                     None => Response::Error {

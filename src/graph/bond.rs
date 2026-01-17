@@ -9,6 +9,12 @@ use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::arena::LineageId;
+use crate::setun::Trit;
+
+/// Default polarity for backward compatibility (excitatory)
+fn default_polarity() -> Trit {
+    Trit::True
+}
 
 /// Unique identifier for a bond
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -93,6 +99,11 @@ pub struct Bond {
 
     /// State flags
     pub flags: BondFlags,
+
+    /// Bond polarity: +1 (Synergy), 0 (Neutral), -1 (Antagonism)
+    /// Determines how energy propagates through this bond
+    #[serde(default = "default_polarity")]
+    pub polarity: Trit,
 }
 
 impl Default for Bond {
@@ -105,6 +116,7 @@ impl Default for Bond {
             decay_rate: 0.0005,
             last_access: now_nanos(),
             flags: BondFlags::ACTIVE,
+            polarity: Trit::True,
         }
     }
 }

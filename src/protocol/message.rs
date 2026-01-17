@@ -39,6 +39,8 @@ pub enum Request {
         source: String,
         target: String,
         strength: f32,
+        /// Polarity: +1=Synergy, 0=Neutral, -1=Antagonism
+        polarity: i8,
     },
     BondReinforce {
         source: String,
