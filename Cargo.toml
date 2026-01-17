@@ -1,7 +1,7 @@
 [package]
 name = "mindfry"
 version = "1.6.0"
-edition = "2024"
+edition = "2021"
 authors = ["Erdem Arslan <erdemarslan@ymail.com>"]
 description = "The World's First Ephemeral Graph Database - A Cognitive DB Engine"
 license = "BSL-1.1"
