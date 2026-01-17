@@ -79,26 +79,35 @@ impl CommandHandler {
                         Some(lineage_id) => match db.psyche.get(lineage_id) {
                             Some(lineage) => {
                                 // TODO: Check antagonism suppression here
-                                // For now, return lineage directly
-                                Response::Ok(ResponseData::Lineage(LineageInfo {
-                                    id,
-                                    energy: lineage.current_energy(),
-                                    threshold: lineage.threshold,
-                                    decay_rate: lineage.decay_rate,
-                                    rigidity: lineage.rigidity,
-                                    is_conscious: lineage.is_conscious(),
-                                    last_access_ms: lineage.last_access / 1_000_000,
+                                use crate::protocol::{LineageResult, LineageStatus};
+                                Response::Ok(ResponseData::LineageResult(LineageResult {
+                                    status: LineageStatus::Found,
+                                    info: Some(LineageInfo {
+                                        id,
+                                        energy: lineage.current_energy(),
+                                        threshold: lineage.threshold,
+                                        decay_rate: lineage.decay_rate,
+                                        rigidity: lineage.rigidity,
+                                        is_conscious: lineage.is_conscious(),
+                                        last_access_ms: lineage.last_access / 1_000_000,
+                                    }),
                                 }))
                             }
-                            None => Response::Error {
-                                code: ErrorCode::LineageNotFound,
-                                message: format!("Lineage '{}' not found", id),
-                            },
+                            None => {
+                                use crate::protocol::{LineageResult, LineageStatus};
+                                Response::Ok(ResponseData::LineageResult(LineageResult {
+                                    status: LineageStatus::NotFound,
+                                    info: None,
+                                }))
+                            }
                         },
-                        None => Response::Error {
-                            code: ErrorCode::LineageNotFound,
-                            message: format!("Lineage '{}' not found", id),
-                        },
+                        None => {
+                            use crate::protocol::{LineageResult, LineageStatus};
+                            Response::Ok(ResponseData::LineageResult(LineageResult {
+                                status: LineageStatus::NotFound,
+                                info: None,
+                            }))
+                        }
                     }
                 } else {
                     // Observer effect: stimulate on read
@@ -111,25 +120,35 @@ impl CommandHandler {
                                 // Observer effect: reading strengthens memory
                                 lineage.stimulate(0.01);
 
-                                Response::Ok(ResponseData::Lineage(LineageInfo {
-                                    id,
-                                    energy: lineage.current_energy(),
-                                    threshold: lineage.threshold,
-                                    decay_rate: lineage.decay_rate,
-                                    rigidity: lineage.rigidity,
-                                    is_conscious: lineage.is_conscious(),
-                                    last_access_ms: lineage.last_access / 1_000_000,
+                                use crate::protocol::{LineageResult, LineageStatus};
+                                Response::Ok(ResponseData::LineageResult(LineageResult {
+                                    status: LineageStatus::Found,
+                                    info: Some(LineageInfo {
+                                        id,
+                                        energy: lineage.current_energy(),
+                                        threshold: lineage.threshold,
+                                        decay_rate: lineage.decay_rate,
+                                        rigidity: lineage.rigidity,
+                                        is_conscious: lineage.is_conscious(),
+                                        last_access_ms: lineage.last_access / 1_000_000,
+                                    }),
                                 }))
                             }
-                            None => Response::Error {
-                                code: ErrorCode::LineageNotFound,
-                                message: format!("Lineage '{}' not found", id),
-                            },
+                            None => {
+                                use crate::protocol::{LineageResult, LineageStatus};
+                                Response::Ok(ResponseData::LineageResult(LineageResult {
+                                    status: LineageStatus::NotFound,
+                                    info: None,
+                                }))
+                            }
                         },
-                        None => Response::Error {
-                            code: ErrorCode::LineageNotFound,
-                            message: format!("Lineage '{}' not found", id),
-                        },
+                        None => {
+                            use crate::protocol::{LineageResult, LineageStatus};
+                            Response::Ok(ResponseData::LineageResult(LineageResult {
+                                status: LineageStatus::NotFound,
+                                info: None,
+                            }))
+                        }
                     }
                 }
             }
@@ -679,11 +698,13 @@ mod tests {
             flags: 0,
         });
         match response {
-            Response::Ok(ResponseData::Lineage(info)) => {
+            Response::Ok(ResponseData::LineageResult(result)) => {
+                assert_eq!(result.status, LineageStatus::Found);
+                let info = result.info.unwrap();
                 assert_eq!(info.id, "test");
                 assert!(info.energy > 0.7);
             }
-            _ => panic!("Expected Lineage"),
+            _ => panic!("Expected LineageResult"),
         }
     }
 
@@ -696,10 +717,11 @@ mod tests {
         });
 
         match response {
-            Response::Error { code, .. } => {
-                assert_eq!(code, ErrorCode::LineageNotFound);
+            Response::Ok(ResponseData::LineageResult(result)) => {
+                assert_eq!(result.status, LineageStatus::NotFound);
+                assert!(result.info.is_none());
             }
-            _ => panic!("Expected Error"),
+            _ => panic!("Expected LineageResult with NotFound status"),
         }
     }
 

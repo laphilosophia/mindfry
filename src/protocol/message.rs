@@ -191,8 +191,8 @@ pub enum ResponseData {
     /// Pong response
     Pong,
 
-    /// Single lineage info
-    Lineage(LineageInfo),
+    /// Single lineage lookup result (with status header)
+    LineageResult(LineageResult),
 
     /// List of lineages
     Lineages(Vec<LineageInfo>),
@@ -205,6 +205,16 @@ pub enum ResponseData {
 
     /// Snapshot created
     SnapshotCreated { name: String },
+}
+
+/// Lineage lookup result with status framing
+/// Wire format: [status:u8] + [payload?]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LineageResult {
+    /// Lookup status
+    pub status: LineageStatus,
+    /// Lineage info (only present if status == Found)
+    pub info: Option<LineageInfo>,
 }
 
 /// Lineage information for responses

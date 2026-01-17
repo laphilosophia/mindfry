@@ -177,9 +177,14 @@ impl MfbpCodec {
             ResponseData::Pong => {
                 buf.push(0x01);
             }
-            ResponseData::Lineage(info) => {
+            ResponseData::LineageResult(result) => {
                 buf.push(0x02);
-                Self::encode_lineage_info(buf, info);
+                // Status header
+                buf.push(result.status as u8);
+                // Payload only if Found
+                if let Some(ref info) = result.info {
+                    Self::encode_lineage_info(buf, info);
+                }
             }
             ResponseData::Lineages(list) => {
                 buf.push(0x03);

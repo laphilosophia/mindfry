@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-01-17
+
+### ⚠️ Breaking Change: Response Framing
+
+`LINEAGE.GET` response now includes status header for unambiguous client parsing.
+
+### Changed
+
+- **Response Format**: `[status:u8] + [payload?]`
+  - `0x00` (Found): Full `LineageInfo` payload follows
+  - `0x01` (NotFound): No payload, lineage doesn't exist
+  - `0x02` (Repressed): No payload, hidden by Antagonism
+  - `0x03` (Dormant): No payload, in retention buffer
+- **`ResponseData::Lineage`** → **`ResponseData::LineageResult`**
+- **`LineageResult`** struct: `{ status: LineageStatus, info: Option<LineageInfo> }`
+
+### Why Breaking?
+
+Previously, NotFound returned `Response::Error`. Now returns `Response::Ok(LineageResult { status: NotFound })`.
+This enables richer client-side handling (distinguish "doesn't exist" from "hidden by system").
+
+---
+
 ## [1.4.1] - 2026-01-17
 
 ### 👑 Executive Override
