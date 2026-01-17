@@ -62,30 +62,75 @@ impl CommandHandler {
                 Response::Ok(ResponseData::Ack)
             }
 
-            Request::LineageGet { id } => {
-                let db = self.db.read().unwrap();
-                let key = self.hash_key(&id);
+            Request::LineageGet { id, flags } => {
+                use crate::protocol::QueryFlags;
 
-                match db.psyche.lookup(key) {
-                    Some(lineage_id) => match db.psyche.get(lineage_id) {
-                        Some(lineage) => Response::Ok(ResponseData::Lineage(LineageInfo {
-                            id,
-                            energy: lineage.current_energy(),
-                            threshold: lineage.threshold,
-                            decay_rate: lineage.decay_rate,
-                            rigidity: lineage.rigidity,
-                            is_conscious: lineage.is_conscious(),
-                            last_access_ms: lineage.last_access / 1_000_000,
-                        })),
+                let query_flags = QueryFlags::from_bits_truncate(flags);
+                let _bypass = query_flags.contains(QueryFlags::BYPASS_FILTERS);
+                let _include_repressed = query_flags.contains(QueryFlags::INCLUDE_REPRESSED);
+                let no_side_effects = query_flags.contains(QueryFlags::NO_SIDE_EFFECTS);
+
+                // Use read or write lock based on side effects
+                if no_side_effects {
+                    let db = self.db.read().unwrap();
+                    let key = self.hash_key(&id);
+
+                    match db.psyche.lookup(key) {
+                        Some(lineage_id) => match db.psyche.get(lineage_id) {
+                            Some(lineage) => {
+                                // TODO: Check antagonism suppression here
+                                // For now, return lineage directly
+                                Response::Ok(ResponseData::Lineage(LineageInfo {
+                                    id,
+                                    energy: lineage.current_energy(),
+                                    threshold: lineage.threshold,
+                                    decay_rate: lineage.decay_rate,
+                                    rigidity: lineage.rigidity,
+                                    is_conscious: lineage.is_conscious(),
+                                    last_access_ms: lineage.last_access / 1_000_000,
+                                }))
+                            }
+                            None => Response::Error {
+                                code: ErrorCode::LineageNotFound,
+                                message: format!("Lineage '{}' not found", id),
+                            },
+                        },
                         None => Response::Error {
                             code: ErrorCode::LineageNotFound,
                             message: format!("Lineage '{}' not found", id),
                         },
-                    },
-                    None => Response::Error {
-                        code: ErrorCode::LineageNotFound,
-                        message: format!("Lineage '{}' not found", id),
-                    },
+                    }
+                } else {
+                    // Observer effect: stimulate on read
+                    let mut db = self.db.write().unwrap();
+                    let key = self.hash_key(&id);
+
+                    match db.psyche.lookup(key) {
+                        Some(lineage_id) => match db.psyche.get_mut(lineage_id) {
+                            Some(lineage) => {
+                                // Observer effect: reading strengthens memory
+                                lineage.stimulate(0.01);
+
+                                Response::Ok(ResponseData::Lineage(LineageInfo {
+                                    id,
+                                    energy: lineage.current_energy(),
+                                    threshold: lineage.threshold,
+                                    decay_rate: lineage.decay_rate,
+                                    rigidity: lineage.rigidity,
+                                    is_conscious: lineage.is_conscious(),
+                                    last_access_ms: lineage.last_access / 1_000_000,
+                                }))
+                            }
+                            None => Response::Error {
+                                code: ErrorCode::LineageNotFound,
+                                message: format!("Lineage '{}' not found", id),
+                            },
+                        },
+                        None => Response::Error {
+                            code: ErrorCode::LineageNotFound,
+                            message: format!("Lineage '{}' not found", id),
+                        },
+                    }
                 }
             }
 
@@ -629,7 +674,10 @@ mod tests {
         assert!(matches!(response, Response::Ok(ResponseData::Ack)));
 
         // Get
-        let response = handler.handle(Request::LineageGet { id: "test".into() });
+        let response = handler.handle(Request::LineageGet {
+            id: "test".into(),
+            flags: 0,
+        });
         match response {
             Response::Ok(ResponseData::Lineage(info)) => {
                 assert_eq!(info.id, "test");
@@ -644,6 +692,7 @@ mod tests {
         let mut handler = setup_handler();
         let response = handler.handle(Request::LineageGet {
             id: "nonexistent".into(),
+            flags: 0,
         });
 
         match response {

@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.1] - 2026-01-17
+
+### 👑 Executive Override
+
+User authority layer above cognitive filters for reliable data access.
+
+### Added
+
+- **`QueryFlags`**: Bitmask for access control
+  - `BYPASS_FILTERS` (0x01): Skip Cortex/Antagonism filters
+  - `INCLUDE_REPRESSED` (0x02): Reveal hidden data with REPRESSED status
+  - `NO_SIDE_EFFECTS` (0x04): Read without observer effect
+  - `FORENSIC` (0x07): All flags combined (god mode)
+- **`LineageStatus`**: Rich result states
+  - `Found` (0): Normal success
+  - `NotFound` (1): Doesn't exist
+  - `Repressed` (2): Hidden by Antagonism
+  - `Dormant` (3): In retention buffer
+- **Observer Effect**: `LINEAGE.GET` now stimulates memory on read (+0.01)
+
+### Protocol
+
+- `LINEAGE.GET` now accepts optional `flags:u8` (backward compat: default 0)
+
+---
+
 ## [1.4.0] - 2026-01-17
 
 ### 🧠 Synaptic Evolution

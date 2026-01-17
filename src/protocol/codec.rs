@@ -71,8 +71,11 @@ impl MfbpCodec {
                 payload.extend_from_slice(&threshold.to_le_bytes());
                 payload.extend_from_slice(&decay_rate.to_le_bytes());
             }
-            Request::LineageGet { id }
-            | Request::LineageForget { id }
+            Request::LineageGet { id, flags } => {
+                Self::write_string(&mut payload, id);
+                payload.push(*flags);
+            }
+            Request::LineageForget { id }
             | Request::LineageTouch { id }
             | Request::BondNeighbors { id } => {
                 Self::write_string(&mut payload, id);
@@ -322,7 +325,13 @@ impl MfbpCodec {
             }
             OpCode::LineageGet => {
                 let id = Self::read_string(payload, &mut cursor)?;
-                Request::LineageGet { id }
+                // Optional flags (backward compat: default = 0)
+                let flags = if cursor < payload.len() {
+                    payload[cursor]
+                } else {
+                    0
+                };
+                Request::LineageGet { id, flags }
             }
             OpCode::LineageStimulate => {
                 let id = Self::read_string(payload, &mut cursor)?;

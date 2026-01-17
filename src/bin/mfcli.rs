@@ -47,8 +47,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 eprintln!("Usage: mfcli get <id>");
                 return Ok(());
             }
+            let flags: u8 = if args.len() > 3 {
+                args[3].parse().unwrap_or(0)
+            } else {
+                0
+            };
             Request::LineageGet {
                 id: args[2].clone(),
+                flags,
             }
         }
         "stimulate" => {

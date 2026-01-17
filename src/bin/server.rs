@@ -213,7 +213,9 @@ fn log_request(request: &Request) {
         Request::Ping => info!("  → PING"),
         Request::Stats => info!("  → STATS"),
         Request::LineageCreate { id, .. } => info!("  → LINEAGE.CREATE '{}'", id),
-        Request::LineageGet { id } => info!("  → LINEAGE.GET '{}'", id),
+        Request::LineageGet { id, flags } => {
+            info!("  → LINEAGE.GET '{}' [flags:0x{:02X}]", id, flags)
+        }
         Request::LineageStimulate { id, delta } => {
             info!("  → LINEAGE.STIMULATE '{}' +{}", id, delta)
         }

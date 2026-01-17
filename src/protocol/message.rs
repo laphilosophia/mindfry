@@ -2,9 +2,45 @@
 //!
 //! Request and response message types for the protocol.
 
+use bitflags::bitflags;
 use serde::{Deserialize, Serialize};
 
 use super::OpCode;
+
+// ═══════════════════════════════════════════════════════════════
+// QUERY FLAGS (Executive Override)
+// ═══════════════════════════════════════════════════════════════
+
+bitflags! {
+    /// Query flags for controlling access behavior
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+    pub struct QueryFlags: u8 {
+        /// No special flags (default behavior)
+        const NONE = 0x00;
+        /// Bypass Cortex mood and Antagonism filters
+        const BYPASS_FILTERS = 0x01;
+        /// Return REPRESSED status instead of hiding
+        const INCLUDE_REPRESSED = 0x02;
+        /// Don't stimulate on read (no observer effect)
+        const NO_SIDE_EFFECTS = 0x04;
+        /// All flags combined (forensic/god mode)
+        const FORENSIC = 0x07;
+    }
+}
+
+/// Status of lineage lookup result
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[repr(u8)]
+pub enum LineageStatus {
+    /// Normal success - lineage found and accessible
+    Found = 0,
+    /// Lineage does not exist in storage
+    NotFound = 1,
+    /// Lineage exists but is repressed by Antagonism
+    Repressed = 2,
+    /// Lineage is in retention buffer (scheduled for GC)
+    Dormant = 3,
+}
 
 // ═══════════════════════════════════════════════════════════════
 // REQUEST MESSAGES
@@ -22,6 +58,8 @@ pub enum Request {
     },
     LineageGet {
         id: String,
+        /// Query flags for access control (default: NONE)
+        flags: u8,
     },
     LineageStimulate {
         id: String,
