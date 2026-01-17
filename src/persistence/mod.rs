@@ -27,7 +27,9 @@
 //! - **WAL (Phase 3.5)**: Write-ahead log for crash recovery
 
 mod akashic;
+mod indexer;
 mod snapshot;
 
-pub use akashic::{AkashicStore, AkashicConfig, AkashicError};
+pub use akashic::{AkashicConfig, AkashicError, AkashicStore};
+pub use indexer::LineageIndexer;
 pub use snapshot::{Snapshot, SnapshotMeta};

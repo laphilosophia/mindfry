@@ -13,6 +13,9 @@ Nabu's identity (mood, personality) now survives server restarts.
 - **Serde derives**: `Trit`, `Octet`, `Quantizer`, `Cortex`, `RetentionBuffer` now serializable
 - **`cortex_data` in Snapshot**: Optional Cortex state preserved in snapshots
 - **Mood-Coupled Sensitivity**: Consciousness sensitivity now varies with mood (0.5x-1.5x)
+- **`LineageIndexer`**: O(1) key-to-id lookup via sled tree
+  - `insert()`, `get()`, `remove()`, `rebuild()` methods
+  - Integrated into `AkashicStore` with `indexer()` accessor
 
 ### Changed
 
@@ -21,7 +24,7 @@ Nabu's identity (mood, personality) now survives server restarts.
 
 ### Internal
 
-- 66/66 tests passing
+- 70/70 tests passing
 - Backward compatible: old snapshots load with `cortex_data: None`
 
 ---

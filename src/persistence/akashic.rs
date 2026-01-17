@@ -101,6 +101,8 @@ pub struct AkashicStore {
     snapshots: Tree,
     /// Snapshot metadata index
     snapshot_meta: Tree,
+    /// Lineage key-to-id index for O(1) lookups
+    indexer: super::indexer::LineageIndexer,
     /// Configuration
     _config: AkashicConfig,
 }
@@ -116,6 +118,7 @@ impl AkashicStore {
 
         let snapshots = db.open_tree("snapshots")?;
         let snapshot_meta = db.open_tree("snapshot_meta")?;
+        let lineage_index = db.open_tree("lineage_index")?;
 
         // Initialize meta if first run
         let meta_tree = db.open_tree("meta")?;
@@ -132,6 +135,7 @@ impl AkashicStore {
             db,
             snapshots,
             snapshot_meta,
+            indexer: super::indexer::LineageIndexer::new(lineage_index),
             _config: config,
         })
     }
@@ -273,6 +277,11 @@ impl AkashicStore {
     /// Get database size on disk
     pub fn disk_size(&self) -> Result<u64> {
         Ok(self.db.size_on_disk()?)
+    }
+
+    /// Get a reference to the lineage indexer for O(1) key lookups
+    pub fn indexer(&self) -> &super::indexer::LineageIndexer {
+        &self.indexer
     }
 
     // ═══════════════════════════════════════════════════════════════
