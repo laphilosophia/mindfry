@@ -20,10 +20,10 @@
 //! │  │   Psyche Arena  │  │   Bond Graph    │  │  Strata Arena   │      │
 //! │  │   (Lineages)    │  │   (CSR/Adj)     │  │  (Engrams)      │      │
 //! │  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘      │
-//! │           └───────────────────┼─────────────────────┘               │
-//! │                               ▼                                      │
+//! │           └──────────────────-─┼────────────────────┘               │
+//! │                                ▼                                    │
 //! │  ┌─────────────────────────────────────────────────────────────┐    │
-//! │  │                    Decay Engine (Rayon)                      │    │
+//! │  │                    Decay Engine (Rayon)                     │    │
 //! │  └─────────────────────────────────────────────────────────────┘    │
 //! └─────────────────────────────────────────────────────────────────────┘
 //! ```
@@ -49,7 +49,7 @@ pub mod ffi;
 pub use arena::{Engram, Lineage, LineageId, PsycheArena, StrataArena};
 pub use dynamics::{DecayConfig, DecayEngine};
 pub use graph::{Bond, BondGraph, BondId};
-pub use setun::{Octet, Quantizer, Trit};
+pub use setun::{Cortex, Octet, Quantizer, RetentionBuffer, Trit};
 
 /// Default maximum lineages in psyche arena
 pub const DEFAULT_MAX_LINEAGES: usize = 1 << 20; // 1M lineages
@@ -70,6 +70,8 @@ pub struct MindFry {
     pub bonds: BondGraph,
     /// Background decay engine
     pub decay: DecayEngine,
+    /// Decision-making brain (Setun ternary logic)
+    pub cortex: Cortex,
 }
 
 impl MindFry {
@@ -80,16 +82,25 @@ impl MindFry {
 
     /// Create a new MindFry instance with custom configuration
     pub fn with_config(config: MindFryConfig) -> Self {
+        use setun::{Octet, Trit, dimension};
+
         let psyche = PsycheArena::with_capacity(config.max_lineages);
         let strata = StrataArena::with_capacity(config.max_lineages, config.strata_depth);
         let bonds = BondGraph::with_capacity(config.max_lineages, config.max_bonds);
         let decay = DecayEngine::new(config.decay);
+
+        // Default personality: Curious and Preserving
+        let mut personality = Octet::neutral();
+        personality.set(dimension::CURIOSITY, Trit::True);
+        personality.set(dimension::PRESERVATION, Trit::True);
+        let cortex = Cortex::new(personality);
 
         Self {
             psyche,
             strata,
             bonds,
             decay,
+            cortex,
         }
     }
 }

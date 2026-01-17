@@ -315,19 +315,45 @@ impl CommandHandler {
             // QUERY OPERATIONS
             // ═══════════════════════════════════════════════════════════════
             Request::QueryConscious { min_energy } => {
+                use crate::setun::Trit;
+
                 let db = self.db.read().unwrap();
+
+                // Use Cortex for ternary consciousness evaluation
+                // Lucid (+1) or Dreaming (0) count as "aware"
                 let lineages: Vec<LineageInfo> = db
                     .psyche
                     .iter()
-                    .filter(|(_, l)| l.is_conscious() && l.current_energy() >= min_energy)
-                    .map(|(id, l)| LineageInfo {
-                        id: format!("lineage_{}", id.0),
-                        energy: l.current_energy(),
-                        threshold: l.threshold,
-                        decay_rate: l.decay_rate,
-                        rigidity: l.rigidity,
-                        is_conscious: true,
-                        last_access_ms: l.last_access / 1_000_000,
+                    .filter(|(_, l)| {
+                        // First check energy threshold
+                        if l.current_energy() < min_energy {
+                            return false;
+                        }
+
+                        // Use Cortex to evaluate consciousness state
+                        let state = db
+                            .cortex
+                            .consciousness_state(l.current_energy() as f64, l.threshold as f64);
+
+                        // Accept Lucid (+1) and Dreaming (0), reject Dormant (-1)
+                        state != Trit::False
+                    })
+                    .map(|(id, l)| {
+                        // Calculate ternary state for response
+                        let state = db
+                            .cortex
+                            .consciousness_state(l.current_energy() as f64, l.threshold as f64);
+
+                        LineageInfo {
+                            id: format!("lineage_{}", id.0),
+                            energy: l.current_energy(),
+                            threshold: l.threshold,
+                            decay_rate: l.decay_rate,
+                            rigidity: l.rigidity,
+                            // True if Lucid (+1), false if Dreaming (0)
+                            is_conscious: state == Trit::True,
+                            last_access_ms: l.last_access / 1_000_000,
+                        }
                     })
                     .collect();
 
@@ -441,6 +467,12 @@ impl CommandHandler {
                 value: _value,
             } => {
                 // TODO: Implement physics tuning
+                Response::Ok(ResponseData::Ack)
+            }
+
+            Request::MoodSet { mood } => {
+                let mut db = self.db.write().unwrap();
+                db.cortex.set_mood(mood as f64);
                 Response::Ok(ResponseData::Ack)
             }
 

@@ -83,6 +83,10 @@ pub enum Request {
         param: u8,
         value: f32,
     },
+    /// Set Cortex mood (external override)
+    MoodSet {
+        mood: f32,
+    },
 
     // Stream
     Subscribe {
@@ -114,6 +118,7 @@ impl Request {
             Self::Restore { .. } => OpCode::SysRestore,
             Self::Freeze { .. } => OpCode::SysFreeze,
             Self::PhysicsTune { .. } => OpCode::PhysicsTune,
+            Self::MoodSet { .. } => OpCode::SysMoodSet,
             Self::Subscribe { .. } => OpCode::StreamSubscribe,
             Self::Unsubscribe => OpCode::StreamUnsubscribe,
         }
@@ -131,10 +136,7 @@ pub enum Response {
     Ok(ResponseData),
 
     /// Error with message
-    Error {
-        code: ErrorCode,
-        message: String,
-    },
+    Error { code: ErrorCode, message: String },
 
     /// Event notification
     Event(Event),
@@ -243,13 +245,34 @@ impl ErrorCode {
 /// Event notification for subscribers
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Event {
-    LineageCreated { id: String, energy: f32 },
-    LineageStimulated { id: String, new_energy: f32, delta: f32 },
-    LineageForgotten { id: String },
-    BondCreated { source: String, target: String, strength: f32 },
-    BondSevered { source: String, target: String },
-    DecayTick { processed: usize, dead_count: usize },
-    SnapshotCreated { name: String },
+    LineageCreated {
+        id: String,
+        energy: f32,
+    },
+    LineageStimulated {
+        id: String,
+        new_energy: f32,
+        delta: f32,
+    },
+    LineageForgotten {
+        id: String,
+    },
+    BondCreated {
+        source: String,
+        target: String,
+        strength: f32,
+    },
+    BondSevered {
+        source: String,
+        target: String,
+    },
+    DecayTick {
+        processed: usize,
+        dead_count: usize,
+    },
+    SnapshotCreated {
+        name: String,
+    },
 }
 
 impl Event {
@@ -287,13 +310,16 @@ mod tests {
 
     #[test]
     fn test_event_mask() {
-        let event = Event::LineageCreated { id: "x".into(), energy: 1.0 };
+        let event = Event::LineageCreated {
+            id: "x".into(),
+            energy: 1.0,
+        };
         assert_eq!(event.mask_bit(), 1);
 
         let event = Event::BondCreated {
             source: "a".into(),
             target: "b".into(),
-            strength: 0.5
+            strength: 0.5,
         };
         assert_eq!(event.mask_bit(), 1 << 3);
     }

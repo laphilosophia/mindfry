@@ -6,4 +6,4 @@
 
 mod decay;
 
-pub use decay::{DecayEngine, DecayConfig};
+pub use decay::{DecayConfig, DecayEngine, GcResult};

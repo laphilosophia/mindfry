@@ -387,6 +387,299 @@ impl Default for Quantizer {
 }
 
 // ============================================================================
+// 4. THE BRAIN: CORTEX
+// ============================================================================
+
+/// The Cortex - MindFry's Decision-Making Brain
+///
+/// Encapsulates the system's personality, emotional state, and decision logic.
+/// Uses balanced ternary (Trit) for nuanced three-state decisions.
+///
+/// # Architecture
+///
+/// ```text
+/// ┌─────────────────────────────────────────┐
+/// │               CORTEX                    │
+/// ├─────────────────────────────────────────┤
+/// │  personality: Octet  (DNA - immutable)  │
+/// │  mood: f64           (State - mutable)  │
+/// │  quantizer: Quantizer (Config)          │
+/// └─────────────────────────────────────────┘
+/// ```
+///
+/// # Example
+///
+/// ```
+/// use mindfry::setun::{Cortex, Octet, Trit, dimension};
+///
+/// // Create a curious, preserving personality
+/// let mut personality = Octet::neutral();
+/// personality.set(dimension::CURIOSITY, Trit::True);
+/// personality.set(dimension::PRESERVATION, Trit::True);
+///
+/// let mut cortex = Cortex::new(personality);
+///
+/// // Evaluate an event
+/// let mut event = Octet::neutral();
+/// event.set(dimension::CURIOSITY, Trit::True);
+/// let resonance = cortex.evaluate(&event);
+/// assert!(resonance > 0.0);  // Positive resonance - compatible
+///
+/// // Mood affects decisions
+/// cortex.shift_mood(-0.5);  // Become stressed
+/// assert!(cortex.mood() < 0.0);
+/// ```
+#[derive(Debug, Clone)]
+pub struct Cortex {
+    /// The system's fixed personality (DNA)
+    personality: Octet,
+    /// Current emotional state (-1.0 stressed to +1.0 excited)
+    mood: f64,
+    /// Threshold modulator for analog-to-trit conversion
+    quantizer: Quantizer,
+    /// Data retention buffer for safe garbage collection
+    retention: RetentionBuffer,
+}
+
+impl Cortex {
+    /// Create a new Cortex with the given personality.
+    ///
+    /// Starts with neutral mood (0.0) and default quantizer threshold (0.33).
+    pub fn new(personality: Octet) -> Self {
+        Self {
+            personality,
+            mood: 0.0,
+            quantizer: Quantizer::default(),
+            retention: RetentionBuffer::default(),
+        }
+    }
+
+    /// Create a new Cortex with custom quantizer threshold.
+    pub fn with_threshold(personality: Octet, threshold: f64) -> Self {
+        Self {
+            personality,
+            mood: 0.0,
+            quantizer: Quantizer::new(threshold),
+            retention: RetentionBuffer::default(),
+        }
+    }
+
+    /// Get the current mood (-1.0 to +1.0)
+    #[inline]
+    pub fn mood(&self) -> f64 {
+        self.mood
+    }
+
+    /// Get a reference to the personality
+    #[inline]
+    pub fn personality(&self) -> &Octet {
+        &self.personality
+    }
+
+    /// Shift the mood by a delta, clamped to [-1.0, +1.0].
+    ///
+    /// Positive delta = more excited/optimistic
+    /// Negative delta = more stressed/pessimistic
+    #[inline]
+    pub fn shift_mood(&mut self, delta: f64) {
+        self.mood = (self.mood + delta).clamp(-1.0, 1.0);
+    }
+
+    /// Set the mood directly (external override).
+    ///
+    /// Used for MFBP `MOOD_SET` command from NABU.
+    #[inline]
+    pub fn set_mood(&mut self, value: f64) {
+        self.mood = value.clamp(-1.0, 1.0);
+    }
+
+    /// Evaluate an event/entity against the system personality.
+    ///
+    /// Returns resonance score in [-1.0, +1.0]:
+    /// - Positive: Compatible, aligned
+    /// - Zero: Neutral, no opinion
+    /// - Negative: Conflicting, opposed
+    #[inline]
+    pub fn evaluate(&self, event: &Octet) -> f64 {
+        self.personality.resonance(event)
+    }
+
+    /// Make a ternary decision based on an analog value.
+    ///
+    /// The decision is influenced by the current mood:
+    /// - Positive mood → easier to decide "True"
+    /// - Negative mood → harder to decide "True"
+    ///
+    /// # Arguments
+    /// * `value` - The analog input to quantize (e.g., energy level)
+    #[inline]
+    pub fn decide(&self, value: f64) -> Trit {
+        self.quantizer.quantize(value, self.mood)
+    }
+
+    /// Make a consciousness decision for a lineage.
+    ///
+    /// Converts the binary is_conscious check into a ternary state:
+    /// - True (+1): Lucid - fully conscious (energy significantly above threshold)
+    /// - Unknown (0): Dreaming - semi-conscious (energy near threshold)
+    /// - False (-1): Dormant - not conscious (energy below threshold)
+    ///
+    /// # Arguments
+    /// * `energy` - Current energy level (0.0 to 1.0)
+    /// * `threshold` - The lineage's consciousness threshold
+    pub fn consciousness_state(&self, energy: f64, threshold: f64) -> Trit {
+        // Calculate how far above/below threshold we are
+        let delta = energy - threshold;
+
+        // Amplify the delta to get clearer decisions
+        // A 10% margin above threshold should be clearly Lucid
+        // Formula: delta * (1 / margin) where margin = 0.1 (10%)
+        // So: 0.15 delta → 0.15 * 10 = 1.5 → clamped, clearly True
+        //     0.05 delta → 0.05 * 10 = 0.5 → above 0.33 threshold, True
+        //     0.02 delta → 0.02 * 10 = 0.2 → below 0.33, Unknown (Dreaming)
+        //    -0.10 delta → -0.10 * 10 = -1.0 → clearly False (Dormant)
+        const CONSCIOUSNESS_SENSITIVITY: f64 = 10.0; // 10% margin = decisive
+        let amplified = delta * CONSCIOUSNESS_SENSITIVITY;
+
+        self.quantizer.quantize(amplified, self.mood)
+    }
+
+    /// Get a mutable reference to the retention buffer
+    #[inline]
+    pub fn retention_mut(&mut self) -> &mut RetentionBuffer {
+        &mut self.retention
+    }
+
+    /// Get the retention buffer stats
+    #[inline]
+    pub fn pending_removal_count(&self) -> usize {
+        self.retention.pending_count()
+    }
+}
+
+impl Default for Cortex {
+    fn default() -> Self {
+        Self::new(Octet::neutral())
+    }
+}
+
+// ============================================================================
+// 5. THE BUFFER: RETENTION BUFFER (Data Lifecycle Management)
+// ============================================================================
+
+/// RetentionBuffer - TTL-based data retention before garbage collection.
+///
+/// When the system decides a lineage should be removed (`Trit::False`) or
+/// is uncertain (`Trit::Unknown`), it doesn't delete immediately. Instead,
+/// it places the lineage in this buffer with a TTL (Time-To-Live).
+///
+/// **Lifecycle:**
+/// 1. Lineage marked for removal → enters buffer with `default_ttl`
+/// 2. Each GC tick → TTL decrements
+/// 3. If lineage is stimulated → `restore()` removes it from buffer
+/// 4. If TTL reaches 0 → safe to delete
+///
+/// This prevents "mass extinction" events and provides a debounce mechanism.
+///
+/// # Example
+///
+/// ```
+/// use mindfry::setun::RetentionBuffer;
+///
+/// let mut buffer = RetentionBuffer::new(3);  // 3 tick TTL
+///
+/// // First mark - TTL set to 3
+/// assert!(!buffer.mark_or_tick(42));  // Not ready for deletion
+///
+/// // Tick down - TTL now 2
+/// assert!(!buffer.mark_or_tick(42));
+///
+/// // Restore - lineage was stimulated
+/// buffer.restore(42);
+/// assert_eq!(buffer.pending_count(), 0);
+/// ```
+#[derive(Debug, Clone)]
+pub struct RetentionBuffer {
+    /// Key: Lineage index, Value: Remaining TTL (ticks until deletion)
+    pending_removals: std::collections::HashMap<usize, u8>,
+    /// Default TTL for new entries
+    default_ttl: u8,
+}
+
+impl RetentionBuffer {
+    /// Create a new retention buffer with specified TTL.
+    ///
+    /// # Arguments
+    /// * `ttl` - Number of GC ticks before deletion is allowed
+    pub fn new(ttl: u8) -> Self {
+        Self {
+            pending_removals: std::collections::HashMap::new(),
+            default_ttl: ttl,
+        }
+    }
+
+    /// Mark a lineage for removal or tick its TTL.
+    ///
+    /// - If not in buffer: adds with `default_ttl`
+    /// - If in buffer: decrements TTL
+    /// - Returns `true` if TTL has expired (safe to delete)
+    /// - Returns `false` if still in retention period
+    pub fn mark_or_tick(&mut self, id: usize) -> bool {
+        let ttl = self.pending_removals.entry(id).or_insert(self.default_ttl);
+
+        if *ttl > 0 {
+            *ttl -= 1;
+            false // Still in buffer, don't delete
+        } else {
+            self.pending_removals.remove(&id);
+            true // TTL expired, safe to delete
+        }
+    }
+
+    /// Restore a lineage from the buffer (it recovered).
+    ///
+    /// Called when a lineage is stimulated or otherwise becomes healthy again.
+    pub fn restore(&mut self, id: usize) {
+        self.pending_removals.remove(&id);
+    }
+
+    /// Check if a lineage is pending removal.
+    #[inline]
+    pub fn is_pending(&self, id: usize) -> bool {
+        self.pending_removals.contains_key(&id)
+    }
+
+    /// Get the remaining TTL for a pending lineage.
+    #[inline]
+    pub fn remaining_ttl(&self, id: usize) -> Option<u8> {
+        self.pending_removals.get(&id).copied()
+    }
+
+    /// Number of lineages pending removal.
+    #[inline]
+    pub fn pending_count(&self) -> usize {
+        self.pending_removals.len()
+    }
+
+    /// Clear all pending removals (reset buffer).
+    pub fn clear(&mut self) {
+        self.pending_removals.clear();
+    }
+
+    /// Get default TTL value.
+    #[inline]
+    pub fn default_ttl(&self) -> u8 {
+        self.default_ttl
+    }
+}
+
+impl Default for RetentionBuffer {
+    fn default() -> Self {
+        Self::new(3) // 3 ticks default
+    }
+}
+
+// ============================================================================
 // UNIT TESTS
 // ============================================================================
 
@@ -562,5 +855,188 @@ mod tests {
     fn test_quantizer_default() {
         let q = Quantizer::default();
         assert!((q.threshold() - 0.33).abs() < f64::EPSILON);
+    }
+
+    // --- Cortex Tests ---
+
+    #[test]
+    fn test_cortex_creation() {
+        let cortex = Cortex::default();
+        assert_eq!(cortex.mood(), 0.0);
+        assert_eq!(*cortex.personality(), Octet::neutral());
+    }
+
+    #[test]
+    fn test_cortex_mood_shift() {
+        let mut cortex = Cortex::default();
+
+        cortex.shift_mood(0.5);
+        assert!((cortex.mood() - 0.5).abs() < f64::EPSILON);
+
+        cortex.shift_mood(0.8); // Would be 1.3, clamped to 1.0
+        assert!((cortex.mood() - 1.0).abs() < f64::EPSILON);
+
+        cortex.shift_mood(-2.5); // Would be -1.5, clamped to -1.0
+        assert!((cortex.mood() - (-1.0)).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_cortex_mood_set() {
+        let mut cortex = Cortex::default();
+
+        cortex.set_mood(0.75);
+        assert!((cortex.mood() - 0.75).abs() < f64::EPSILON);
+
+        // External override with clamping
+        cortex.set_mood(2.0);
+        assert!((cortex.mood() - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_cortex_evaluate() {
+        let mut personality = Octet::neutral();
+        personality.set(dimension::CURIOSITY, Trit::True);
+        personality.set(dimension::PRESERVATION, Trit::True);
+
+        let cortex = Cortex::new(personality);
+
+        // Compatible event
+        let mut event = Octet::neutral();
+        event.set(dimension::CURIOSITY, Trit::True);
+        assert!(cortex.evaluate(&event) > 0.0);
+
+        // Conflicting event
+        let mut conflict = Octet::neutral();
+        conflict.set(dimension::CURIOSITY, Trit::False);
+        conflict.set(dimension::PRESERVATION, Trit::False);
+        assert!(cortex.evaluate(&conflict) < 0.0);
+    }
+
+    #[test]
+    fn test_cortex_decide() {
+        let cortex = Cortex::default();
+
+        // High value → True
+        assert_eq!(cortex.decide(0.8), Trit::True);
+
+        // Low value → Unknown (within threshold)
+        assert_eq!(cortex.decide(0.2), Trit::Unknown);
+
+        // Negative value → False
+        assert_eq!(cortex.decide(-0.5), Trit::False);
+    }
+
+    #[test]
+    fn test_cortex_consciousness_state() {
+        let cortex = Cortex::default();
+
+        // Well above threshold (0.9 - 0.5 = 0.4 * 10 = 4.0) → Lucid
+        assert_eq!(cortex.consciousness_state(0.9, 0.5), Trit::True);
+
+        // Well below threshold (0.2 - 0.5 = -0.3 * 10 = -3.0) → Dormant
+        assert_eq!(cortex.consciousness_state(0.2, 0.5), Trit::False);
+
+        // Slightly above threshold (0.55 - 0.5 = 0.05 * 10 = 0.5 > 0.33) → Lucid
+        assert_eq!(cortex.consciousness_state(0.55, 0.5), Trit::True);
+
+        // Very close to threshold (0.52 - 0.5 = 0.02 * 10 = 0.2 < 0.33) → Dreaming
+        assert_eq!(cortex.consciousness_state(0.52, 0.5), Trit::Unknown);
+
+        // Fix for 0.95 bug: (0.95 - 0.8 = 0.15 * 10 = 1.5 > 0.33) → Lucid
+        assert_eq!(cortex.consciousness_state(0.95, 0.8), Trit::True);
+    }
+
+    #[test]
+    fn test_cortex_mood_affects_decision() {
+        let mut cortex = Cortex::with_threshold(Octet::neutral(), 0.5);
+
+        // Neutral mood: 0.45 is below 0.5 threshold → Unknown
+        assert_eq!(cortex.decide(0.45), Trit::Unknown);
+
+        // Excited mood (+1.0): threshold drops to 0.4, 0.45 > 0.4 → True
+        cortex.set_mood(1.0);
+        assert_eq!(cortex.decide(0.45), Trit::True);
+
+        // Stressed mood (-1.0): threshold rises to 0.6, 0.55 < 0.6 → Unknown
+        cortex.set_mood(-1.0);
+        assert_eq!(cortex.decide(0.55), Trit::Unknown);
+    }
+
+    // --- RetentionBuffer Tests ---
+
+    #[test]
+    fn test_retention_buffer_creation() {
+        let buffer = RetentionBuffer::new(5);
+        assert_eq!(buffer.default_ttl(), 5);
+        assert_eq!(buffer.pending_count(), 0);
+    }
+
+    #[test]
+    fn test_retention_buffer_mark_and_tick() {
+        let mut buffer = RetentionBuffer::new(3);
+
+        // First mark - TTL set to 3, then decremented to 2
+        assert!(!buffer.mark_or_tick(42));
+        assert!(buffer.is_pending(42));
+        assert_eq!(buffer.remaining_ttl(42), Some(2));
+
+        // Second tick - TTL now 1
+        assert!(!buffer.mark_or_tick(42));
+        assert_eq!(buffer.remaining_ttl(42), Some(1));
+
+        // Third tick - TTL now 0
+        assert!(!buffer.mark_or_tick(42));
+        assert_eq!(buffer.remaining_ttl(42), Some(0));
+
+        // Fourth tick - TTL expired, safe to delete
+        assert!(buffer.mark_or_tick(42));
+        assert!(!buffer.is_pending(42));
+    }
+
+    #[test]
+    fn test_retention_buffer_restore() {
+        let mut buffer = RetentionBuffer::new(3);
+
+        // Mark for removal
+        buffer.mark_or_tick(100);
+        assert!(buffer.is_pending(100));
+
+        // Restore (data recovered)
+        buffer.restore(100);
+        assert!(!buffer.is_pending(100));
+        assert_eq!(buffer.pending_count(), 0);
+    }
+
+    #[test]
+    fn test_retention_buffer_multiple_items() {
+        let mut buffer = RetentionBuffer::new(2);
+
+        buffer.mark_or_tick(1);
+        buffer.mark_or_tick(2);
+        buffer.mark_or_tick(3);
+
+        assert_eq!(buffer.pending_count(), 3);
+
+        buffer.restore(2);
+        assert_eq!(buffer.pending_count(), 2);
+
+        buffer.clear();
+        assert_eq!(buffer.pending_count(), 0);
+    }
+
+    #[test]
+    fn test_cortex_has_retention_buffer() {
+        let mut cortex = Cortex::default();
+
+        // Cortex should have a retention buffer
+        assert_eq!(cortex.pending_removal_count(), 0);
+
+        // Mark something for removal via cortex
+        cortex.retention_mut().mark_or_tick(99);
+        assert_eq!(cortex.pending_removal_count(), 1);
+
+        // Restore it
+        cortex.retention_mut().restore(99);
+        assert_eq!(cortex.pending_removal_count(), 0);
     }
 }

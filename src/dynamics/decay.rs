@@ -196,6 +196,98 @@ impl DecayEngine {
             lineages.iter().map(|l| l.current_energy()).collect()
         }
     }
+
+    /// Process garbage collection with Cortex ternary logic and RetentionBuffer.
+    ///
+    /// This method evaluates each lineage's viability using the Cortex's
+    /// personality-aware decision making, and uses the RetentionBuffer
+    /// for TTL-based safe deletion.
+    ///
+    /// # Returns
+    /// `GcResult` with counts of processed, retained, pending, and pruned lineages.
+    pub fn process_gc(
+        &self,
+        psyche: &mut PsycheArena,
+        cortex: &mut crate::setun::Cortex,
+    ) -> GcResult {
+        use crate::setun::{Trit, dimension};
+
+        let mut processed = 0;
+        let mut retained = 0; // Healthy, stay alive
+        let mut pending = 0; // In retention buffer
+        let mut disposables = Vec::new(); // Ready for deletion
+
+        // Get preservation bias from personality
+        let preservation_bias =
+            cortex.personality().get(dimension::PRESERVATION).weight() as f64 * 0.1;
+
+        for (id, lineage) in psyche.iter_mut() {
+            processed += 1;
+            let energy = lineage.current_energy() as f64;
+
+            // Viability score: energy relative to death threshold
+            // Positive = healthy, negative = dying
+            let viability_score = energy - self.config.min_energy_threshold as f64;
+
+            // Apply preservation bias to the decision
+            let adjusted_score = viability_score + preservation_bias;
+
+            let decision = cortex.decide(adjusted_score);
+
+            match decision {
+                Trit::True => {
+                    // STABLE: Lineage is healthy
+                    // Remove from retention buffer if present
+                    cortex.retention_mut().restore(id.index());
+                    retained += 1;
+                }
+                Trit::Unknown => {
+                    // UNSTABLE: Lineage is borderline
+                    // Add to retention buffer or tick TTL
+                    if cortex.retention_mut().mark_or_tick(id.index()) {
+                        disposables.push(id);
+                    } else {
+                        pending += 1;
+                    }
+                }
+                Trit::False => {
+                    // OBSOLETE: Lineage is dying
+                    // Fast-track through retention buffer
+                    if cortex.retention_mut().mark_or_tick(id.index()) {
+                        disposables.push(id);
+                    } else {
+                        pending += 1;
+                    }
+                }
+            }
+        }
+
+        // Execute pruning
+        let pruned = disposables.len();
+        for id in disposables {
+            psyche.free(id);
+        }
+
+        GcResult {
+            processed,
+            retained,
+            pending,
+            pruned,
+        }
+    }
+}
+
+/// Result of a garbage collection pass
+#[derive(Debug, Clone, Default)]
+pub struct GcResult {
+    /// Total lineages processed
+    pub processed: usize,
+    /// Lineages that are healthy (Trit::True)
+    pub retained: usize,
+    /// Lineages in retention buffer (pending deletion)
+    pub pending: usize,
+    /// Lineages pruned this tick
+    pub pruned: usize,
 }
 
 impl Default for DecayEngine {
@@ -274,5 +366,46 @@ mod tests {
 
         let result = engine.tick_psyche(&mut psyche);
         assert_eq!(result.processed, 2);
+    }
+
+    #[test]
+    fn test_process_gc_with_retention() {
+        use crate::setun::{Cortex, Octet, Trit, dimension};
+
+        let engine = DecayEngine::default();
+        let mut psyche = PsycheArena::with_capacity(100);
+
+        // Create personality with high preservation
+        let mut personality = Octet::neutral();
+        personality.set(dimension::PRESERVATION, Trit::True);
+        let mut cortex = Cortex::new(personality);
+
+        // Create lineages with varying energy levels
+        psyche.alloc(Lineage::new(0.9)); // Healthy - should be retained
+        psyche.alloc(Lineage::new(0.05)); // Dying - will enter buffer
+        psyche.alloc(Lineage::new(0.03)); // Dying - will enter buffer
+
+        // GC Pass 1: Dying lineages enter retention buffer
+        let result1 = engine.process_gc(&mut psyche, &mut cortex);
+        assert_eq!(result1.processed, 3);
+        assert_eq!(result1.retained, 1); // 0.9 energy one
+        assert_eq!(result1.pending, 2); // Two dying ones in buffer
+        assert_eq!(result1.pruned, 0); // Nothing pruned yet
+        assert_eq!(cortex.pending_removal_count(), 2);
+
+        // GC Pass 2: TTL ticks down
+        let result2 = engine.process_gc(&mut psyche, &mut cortex);
+        assert_eq!(result2.pruned, 0); // Still in buffer
+        assert_eq!(result2.pending, 2);
+
+        // GC Pass 3: TTL ticks down more
+        let result3 = engine.process_gc(&mut psyche, &mut cortex);
+        assert_eq!(result3.pruned, 0); // Still in buffer
+
+        // GC Pass 4: TTL expires, lineages are pruned
+        let result4 = engine.process_gc(&mut psyche, &mut cortex);
+        assert_eq!(result4.pruned, 2); // Both dying lineages pruned
+        assert_eq!(psyche.len(), 1); // Only healthy one remains
+        assert_eq!(cortex.pending_removal_count(), 0);
     }
 }

@@ -9,7 +9,6 @@ pub enum OpCode {
     // ═══════════════════════════════════════════════════════════════
     // LINEAGE OPERATIONS (0x10-0x1F)
     // ═══════════════════════════════════════════════════════════════
-
     /// Create a new lineage
     /// Payload: [id_len: u16, id_bytes: [u8], energy: f32, threshold: f32, decay_rate: f32]
     LineageCreate = 0x10,
@@ -33,7 +32,6 @@ pub enum OpCode {
     // ═══════════════════════════════════════════════════════════════
     // BOND OPERATIONS (0x20-0x2F)
     // ═══════════════════════════════════════════════════════════════
-
     /// Create a bond between two lineages
     /// Payload: [src_len: u16, src: [u8], tgt_len: u16, tgt: [u8], strength: f32]
     BondConnect = 0x20,
@@ -53,7 +51,6 @@ pub enum OpCode {
     // ═══════════════════════════════════════════════════════════════
     // QUERY OPERATIONS (0x30-0x3F)
     // ═══════════════════════════════════════════════════════════════
-
     /// Query conscious lineages (energy >= threshold)
     /// Payload: [min_energy: f32]
     QueryConscious = 0x30,
@@ -73,7 +70,6 @@ pub enum OpCode {
     // ═══════════════════════════════════════════════════════════════
     // SYSTEM OPERATIONS (0x40-0x4F)
     // ═══════════════════════════════════════════════════════════════
-
     /// Ping (keep-alive)
     /// Payload: []
     SysPing = 0x40,
@@ -98,10 +94,13 @@ pub enum OpCode {
     /// Payload: [param_id: u8, value: f32]
     PhysicsTune = 0x45,
 
+    /// Set Cortex mood (external override from NABU)
+    /// Payload: [mood: f32] (-1.0 to +1.0)
+    SysMoodSet = 0x46,
+
     // ═══════════════════════════════════════════════════════════════
     // STREAM OPERATIONS (0x50-0x5F)
     // ═══════════════════════════════════════════════════════════════
-
     /// Subscribe to events
     /// Payload: [events_mask: u32]
     StreamSubscribe = 0x50,
@@ -113,7 +112,6 @@ pub enum OpCode {
     // ═══════════════════════════════════════════════════════════════
     // RESPONSE CODES (0xF0-0xFF)
     // ═══════════════════════════════════════════════════════════════
-
     /// Success response
     ResponseOk = 0xF0,
 
@@ -151,6 +149,7 @@ impl OpCode {
             0x43 => Some(Self::SysRestore),
             0x44 => Some(Self::SysFreeze),
             0x45 => Some(Self::PhysicsTune),
+            0x46 => Some(Self::SysMoodSet),
             // Stream
             0x50 => Some(Self::StreamSubscribe),
             0x51 => Some(Self::StreamUnsubscribe),

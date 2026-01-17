@@ -6,7 +6,7 @@
 
 use std::io;
 
-use super::{OpCode, Request, Response, ResponseData, LineageInfo, Event};
+use super::{Event, LineageInfo, OpCode, Request, Response, ResponseData};
 
 /// MFBP protocol errors
 #[derive(Debug)]
@@ -60,28 +60,41 @@ impl MfbpCodec {
         let opcode = request.opcode();
 
         match request {
-            Request::LineageCreate { id, energy, threshold, decay_rate } => {
+            Request::LineageCreate {
+                id,
+                energy,
+                threshold,
+                decay_rate,
+            } => {
                 Self::write_string(&mut payload, id);
                 payload.extend_from_slice(&energy.to_le_bytes());
                 payload.extend_from_slice(&threshold.to_le_bytes());
                 payload.extend_from_slice(&decay_rate.to_le_bytes());
             }
-            Request::LineageGet { id } |
-            Request::LineageForget { id } |
-            Request::LineageTouch { id } |
-            Request::BondNeighbors { id } => {
+            Request::LineageGet { id }
+            | Request::LineageForget { id }
+            | Request::LineageTouch { id }
+            | Request::BondNeighbors { id } => {
                 Self::write_string(&mut payload, id);
             }
             Request::LineageStimulate { id, delta } => {
                 Self::write_string(&mut payload, id);
                 payload.extend_from_slice(&delta.to_le_bytes());
             }
-            Request::BondConnect { source, target, strength } => {
+            Request::BondConnect {
+                source,
+                target,
+                strength,
+            } => {
                 Self::write_string(&mut payload, source);
                 Self::write_string(&mut payload, target);
                 payload.extend_from_slice(&strength.to_le_bytes());
             }
-            Request::BondReinforce { source, target, delta } => {
+            Request::BondReinforce {
+                source,
+                target,
+                delta,
+            } => {
                 Self::write_string(&mut payload, source);
                 Self::write_string(&mut payload, target);
                 payload.extend_from_slice(&delta.to_le_bytes());
@@ -114,6 +127,9 @@ impl MfbpCodec {
             Request::PhysicsTune { param, value } => {
                 payload.push(*param);
                 payload.extend_from_slice(&value.to_le_bytes());
+            }
+            Request::MoodSet { mood } => {
+                payload.extend_from_slice(&mood.to_le_bytes());
             }
             Request::Subscribe { events_mask } => {
                 payload.extend_from_slice(&events_mask.to_le_bytes());
@@ -209,7 +225,11 @@ impl MfbpCodec {
                 Self::write_string(buf, id);
                 buf.extend_from_slice(&energy.to_le_bytes());
             }
-            Event::LineageStimulated { id, new_energy, delta } => {
+            Event::LineageStimulated {
+                id,
+                new_energy,
+                delta,
+            } => {
                 buf.push(0x02);
                 Self::write_string(buf, id);
                 buf.extend_from_slice(&new_energy.to_le_bytes());
@@ -219,7 +239,11 @@ impl MfbpCodec {
                 buf.push(0x03);
                 Self::write_string(buf, id);
             }
-            Event::BondCreated { source, target, strength } => {
+            Event::BondCreated {
+                source,
+                target,
+                strength,
+            } => {
                 buf.push(0x04);
                 Self::write_string(buf, source);
                 Self::write_string(buf, target);
@@ -230,7 +254,10 @@ impl MfbpCodec {
                 Self::write_string(buf, source);
                 Self::write_string(buf, target);
             }
-            Event::DecayTick { processed, dead_count } => {
+            Event::DecayTick {
+                processed,
+                dead_count,
+            } => {
                 buf.push(0x06);
                 buf.extend_from_slice(&(*processed as u32).to_le_bytes());
                 buf.extend_from_slice(&(*dead_count as u32).to_le_bytes());
@@ -273,8 +300,7 @@ impl MfbpCodec {
         }
 
         let opcode_byte = frame[4];
-        let opcode = OpCode::from_byte(opcode_byte)
-            .ok_or(MfbpError::InvalidOpCode(opcode_byte))?;
+        let opcode = OpCode::from_byte(opcode_byte).ok_or(MfbpError::InvalidOpCode(opcode_byte))?;
 
         let payload = &frame[5..];
         let mut cursor = 0;
@@ -285,7 +311,12 @@ impl MfbpCodec {
                 let energy = Self::read_f32(payload, &mut cursor)?;
                 let threshold = Self::read_f32(payload, &mut cursor)?;
                 let decay_rate = Self::read_f32(payload, &mut cursor)?;
-                Request::LineageCreate { id, energy, threshold, decay_rate }
+                Request::LineageCreate {
+                    id,
+                    energy,
+                    threshold,
+                    decay_rate,
+                }
             }
             OpCode::LineageGet => {
                 let id = Self::read_string(payload, &mut cursor)?;
@@ -308,13 +339,21 @@ impl MfbpCodec {
                 let source = Self::read_string(payload, &mut cursor)?;
                 let target = Self::read_string(payload, &mut cursor)?;
                 let strength = Self::read_f32(payload, &mut cursor)?;
-                Request::BondConnect { source, target, strength }
+                Request::BondConnect {
+                    source,
+                    target,
+                    strength,
+                }
             }
             OpCode::BondReinforce => {
                 let source = Self::read_string(payload, &mut cursor)?;
                 let target = Self::read_string(payload, &mut cursor)?;
                 let delta = Self::read_f32(payload, &mut cursor)?;
-                Request::BondReinforce { source, target, delta }
+                Request::BondReinforce {
+                    source,
+                    target,
+                    delta,
+                }
             }
             OpCode::BondSever => {
                 let source = Self::read_string(payload, &mut cursor)?;
@@ -360,6 +399,10 @@ impl MfbpCodec {
                 let value = Self::read_f32(payload, &mut cursor)?;
                 Request::PhysicsTune { param, value }
             }
+            OpCode::SysMoodSet => {
+                let mood = Self::read_f32(payload, &mut cursor)?;
+                Request::MoodSet { mood }
+            }
             OpCode::StreamSubscribe => {
                 let events_mask = Self::read_u32(payload, &mut cursor)?;
                 Request::Subscribe { events_mask }
@@ -394,7 +437,10 @@ impl MfbpCodec {
             return Err(MfbpError::PayloadTooShort);
         }
         let v = f32::from_le_bytes([
-            buf[*cursor], buf[*cursor + 1], buf[*cursor + 2], buf[*cursor + 3]
+            buf[*cursor],
+            buf[*cursor + 1],
+            buf[*cursor + 2],
+            buf[*cursor + 3],
         ]);
         *cursor += 4;
         Ok(v)
@@ -405,7 +451,10 @@ impl MfbpCodec {
             return Err(MfbpError::PayloadTooShort);
         }
         let v = u32::from_le_bytes([
-            buf[*cursor], buf[*cursor + 1], buf[*cursor + 2], buf[*cursor + 3]
+            buf[*cursor],
+            buf[*cursor + 1],
+            buf[*cursor + 2],
+            buf[*cursor + 3],
         ]);
         *cursor += 4;
         Ok(v)
@@ -449,7 +498,12 @@ mod tests {
         let decoded = MfbpCodec::decode_request(&encoded).unwrap();
 
         match decoded {
-            Request::LineageCreate { id, energy, threshold, decay_rate } => {
+            Request::LineageCreate {
+                id,
+                energy,
+                threshold,
+                decay_rate,
+            } => {
                 assert_eq!(id, "test_concept");
                 assert!((energy - 0.85).abs() < 0.001);
                 assert!((threshold - 0.5).abs() < 0.001);
@@ -470,7 +524,11 @@ mod tests {
         let decoded = MfbpCodec::decode_request(&encoded).unwrap();
 
         match decoded {
-            Request::BondConnect { source, target, strength } => {
+            Request::BondConnect {
+                source,
+                target,
+                strength,
+            } => {
                 assert_eq!(source, "fire");
                 assert_eq!(target, "heat");
                 assert!((strength - 0.9).abs() < 0.001);

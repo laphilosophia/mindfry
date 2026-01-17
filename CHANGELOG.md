@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1] - 2026-01-17
+
+### 🔧 Bug Fix: Consciousness Threshold Tuning
+
+Fixed edge case where energy 0.95 with threshold 0.8 was classified as "Dreaming" instead of "Lucid".
+
+### Added
+
+- **`SysMoodSet` OpCode (0x46)**: External mood injection from NABU
+  - Payload: `[mood: f32]` (-1.0 to +1.0)
+  - Enables real-time emotional state control
+
+### Fixed
+
+- **Consciousness amplification**: Delta now multiplied by 10x for clearer Lucid/Dreaming/Dormant decisions
+  - `>3% above threshold` → Lucid (+1)
+  - `<3% above threshold` → Dreaming (0)
+  - `Below threshold` → Dormant (-1)
+
+### Internal
+
+- 66/66 tests passing
+- E2E verified: 0.95 energy → LUCID
+
+---
+
 ## [1.2.0] - 2026-01-17
 
 ### 🧠 NEW: Tri-Cortex Decision Engine (Setun Module)
@@ -26,14 +52,33 @@ Introduces balanced ternary logic primitives for organic decision-making.
   - Positive mood → easier True; Negative mood → easier True=harder
   - `set_mood()` for external modulation (future NABU integration)
 
+- **`Cortex` Struct**: The decision-making brain
+  - Encapsulates system personality (Octet DNA)
+  - Mood state with internal shift and external override
+  - `consciousness_state()`: Ternary consciousness evaluation (Lucid/Dreaming/Dormant)
+  - `decide()`: Mood-modulated analog-to-Trit conversion
+  - `evaluate()`: Event resonance calculation
+  - Integrated `RetentionBuffer` for safe garbage collection
+
+- **`RetentionBuffer` Struct**: TTL-based data lifecycle management
+  - Prevents mass extinction by debouncing deletion decisions
+  - `mark_or_tick(id)`: Add to buffer or decrement TTL
+  - `restore(id)`: Remove from buffer (data recovered)
+  - Configurable TTL (default: 3 ticks)
+
+- **`DecayEngine::process_gc()`**: Cortex-aware garbage collection
+  - Ternary viability assessment (Stable/Unstable/Obsolete)
+  - Personality-influenced preservation bias
+  - Safe deletion via RetentionBuffer TTL
+
 ### Fixed
 
 - Clippy warnings in `psyche.rs`, `decay.rs`, `bond.rs`, `handler.rs`
 
 ### Internal
 
-- 15 new unit tests for Setun module
-- 53/53 total tests passing
+- 27 new unit tests (Trit, Octet, Quantizer, Cortex, RetentionBuffer, GC)
+- 66/66 total tests passing
 
 ---
 
