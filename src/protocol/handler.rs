@@ -7,12 +7,12 @@ use std::hash::{Hash, Hasher};
 use std::sync::{Arc, RwLock};
 use std::time::Instant;
 
+use crate::MindFry;
 use crate::arena::Lineage;
 use crate::graph::Bond;
-use crate::MindFry;
 
-use super::message::*;
 use super::Request;
+use super::message::*;
 
 /// Command handler for MFBP requests
 pub struct CommandHandler {
@@ -40,8 +40,12 @@ impl CommandHandler {
             // ═══════════════════════════════════════════════════════════════
             // LINEAGE OPERATIONS
             // ═══════════════════════════════════════════════════════════════
-
-            Request::LineageCreate { id, energy, threshold, decay_rate } => {
+            Request::LineageCreate {
+                id,
+                energy,
+                threshold,
+                decay_rate,
+            } => {
                 let mut db = self.db.write().unwrap();
                 let key = self.hash_key(&id);
 
@@ -63,25 +67,21 @@ impl CommandHandler {
                 let key = self.hash_key(&id);
 
                 match db.psyche.lookup(key) {
-                    Some(lineage_id) => {
-                        match db.psyche.get(lineage_id) {
-                            Some(lineage) => {
-                                Response::Ok(ResponseData::Lineage(LineageInfo {
-                                    id,
-                                    energy: lineage.current_energy(),
-                                    threshold: lineage.threshold,
-                                    decay_rate: lineage.decay_rate,
-                                    rigidity: lineage.rigidity,
-                                    is_conscious: lineage.is_conscious(),
-                                    last_access_ms: lineage.last_access / 1_000_000,
-                                }))
-                            }
-                            None => Response::Error {
-                                code: ErrorCode::LineageNotFound,
-                                message: format!("Lineage '{}' not found", id),
-                            },
-                        }
-                    }
+                    Some(lineage_id) => match db.psyche.get(lineage_id) {
+                        Some(lineage) => Response::Ok(ResponseData::Lineage(LineageInfo {
+                            id,
+                            energy: lineage.current_energy(),
+                            threshold: lineage.threshold,
+                            decay_rate: lineage.decay_rate,
+                            rigidity: lineage.rigidity,
+                            is_conscious: lineage.is_conscious(),
+                            last_access_ms: lineage.last_access / 1_000_000,
+                        })),
+                        None => Response::Error {
+                            code: ErrorCode::LineageNotFound,
+                            message: format!("Lineage '{}' not found", id),
+                        },
+                    },
                     None => Response::Error {
                         code: ErrorCode::LineageNotFound,
                         message: format!("Lineage '{}' not found", id),
@@ -94,18 +94,16 @@ impl CommandHandler {
                 let key = self.hash_key(&id);
 
                 match db.psyche.lookup(key) {
-                    Some(lineage_id) => {
-                        match db.psyche.get_mut(lineage_id) {
-                            Some(lineage) => {
-                                lineage.stimulate(delta);
-                                Response::Ok(ResponseData::Ack)
-                            }
-                            None => Response::Error {
-                                code: ErrorCode::LineageNotFound,
-                                message: format!("Lineage '{}' not found", id),
-                            },
+                    Some(lineage_id) => match db.psyche.get_mut(lineage_id) {
+                        Some(lineage) => {
+                            lineage.stimulate(delta);
+                            Response::Ok(ResponseData::Ack)
                         }
-                    }
+                        None => Response::Error {
+                            code: ErrorCode::LineageNotFound,
+                            message: format!("Lineage '{}' not found", id),
+                        },
+                    },
                     None => Response::Error {
                         code: ErrorCode::LineageNotFound,
                         message: format!("Lineage '{}' not found", id),
@@ -140,18 +138,16 @@ impl CommandHandler {
                 let key = self.hash_key(&id);
 
                 match db.psyche.lookup(key) {
-                    Some(lineage_id) => {
-                        match db.psyche.get_mut(lineage_id) {
-                            Some(lineage) => {
-                                lineage.touch();
-                                Response::Ok(ResponseData::Ack)
-                            }
-                            None => Response::Error {
-                                code: ErrorCode::LineageNotFound,
-                                message: format!("Lineage '{}' not found", id),
-                            },
+                    Some(lineage_id) => match db.psyche.get_mut(lineage_id) {
+                        Some(lineage) => {
+                            lineage.touch();
+                            Response::Ok(ResponseData::Ack)
                         }
-                    }
+                        None => Response::Error {
+                            code: ErrorCode::LineageNotFound,
+                            message: format!("Lineage '{}' not found", id),
+                        },
+                    },
                     None => Response::Error {
                         code: ErrorCode::LineageNotFound,
                         message: format!("Lineage '{}' not found", id),
@@ -162,26 +158,33 @@ impl CommandHandler {
             // ═══════════════════════════════════════════════════════════════
             // BOND OPERATIONS
             // ═══════════════════════════════════════════════════════════════
-
-            Request::BondConnect { source, target, strength } => {
+            Request::BondConnect {
+                source,
+                target,
+                strength,
+            } => {
                 let mut db = self.db.write().unwrap();
                 let src_key = self.hash_key(&source);
                 let tgt_key = self.hash_key(&target);
 
                 let src_id = match db.psyche.lookup(src_key) {
                     Some(id) => id,
-                    None => return Response::Error {
-                        code: ErrorCode::LineageNotFound,
-                        message: format!("Source lineage '{}' not found", source),
-                    },
+                    None => {
+                        return Response::Error {
+                            code: ErrorCode::LineageNotFound,
+                            message: format!("Source lineage '{}' not found", source),
+                        };
+                    }
                 };
 
                 let tgt_id = match db.psyche.lookup(tgt_key) {
                     Some(id) => id,
-                    None => return Response::Error {
-                        code: ErrorCode::LineageNotFound,
-                        message: format!("Target lineage '{}' not found", target),
-                    },
+                    None => {
+                        return Response::Error {
+                            code: ErrorCode::LineageNotFound,
+                            message: format!("Target lineage '{}' not found", target),
+                        };
+                    }
                 };
 
                 let bond = Bond::new(src_id, tgt_id, strength);
@@ -194,25 +197,33 @@ impl CommandHandler {
                 }
             }
 
-            Request::BondReinforce { source, target, delta } => {
+            Request::BondReinforce {
+                source,
+                target,
+                delta,
+            } => {
                 let mut db = self.db.write().unwrap();
                 let src_key = self.hash_key(&source);
                 let tgt_key = self.hash_key(&target);
 
                 let src_id = match db.psyche.lookup(src_key) {
                     Some(id) => id,
-                    None => return Response::Error {
-                        code: ErrorCode::LineageNotFound,
-                        message: format!("Source lineage '{}' not found", source),
-                    },
+                    None => {
+                        return Response::Error {
+                            code: ErrorCode::LineageNotFound,
+                            message: format!("Source lineage '{}' not found", source),
+                        };
+                    }
                 };
 
                 let tgt_id = match db.psyche.lookup(tgt_key) {
                     Some(id) => id,
-                    None => return Response::Error {
-                        code: ErrorCode::LineageNotFound,
-                        message: format!("Target lineage '{}' not found", target),
-                    },
+                    None => {
+                        return Response::Error {
+                            code: ErrorCode::LineageNotFound,
+                            message: format!("Target lineage '{}' not found", target),
+                        };
+                    }
                 };
 
                 match db.bonds.find_bond(src_id, tgt_id) {
@@ -241,18 +252,22 @@ impl CommandHandler {
 
                 let src_id = match db.psyche.lookup(src_key) {
                     Some(id) => id,
-                    None => return Response::Error {
-                        code: ErrorCode::LineageNotFound,
-                        message: format!("Source lineage '{}' not found", source),
-                    },
+                    None => {
+                        return Response::Error {
+                            code: ErrorCode::LineageNotFound,
+                            message: format!("Source lineage '{}' not found", source),
+                        };
+                    }
                 };
 
                 let tgt_id = match db.psyche.lookup(tgt_key) {
                     Some(id) => id,
-                    None => return Response::Error {
-                        code: ErrorCode::LineageNotFound,
-                        message: format!("Target lineage '{}' not found", target),
-                    },
+                    None => {
+                        return Response::Error {
+                            code: ErrorCode::LineageNotFound,
+                            message: format!("Target lineage '{}' not found", target),
+                        };
+                    }
                 };
 
                 match db.bonds.find_bond(src_id, tgt_id) {
@@ -273,16 +288,17 @@ impl CommandHandler {
 
                 match db.psyche.lookup(key) {
                     Some(lineage_id) => {
-                        let neighbors: Vec<NeighborInfo> = db.bonds
+                        let neighbors: Vec<NeighborInfo> = db
+                            .bonds
                             .neighbors_with_strength(lineage_id)
-                            .filter_map(|(neighbor_id, strength)| {
+                            .map(|(neighbor_id, strength)| {
                                 // TODO: Reverse lookup ID to string
                                 // For now, use numeric ID as string
-                                Some(NeighborInfo {
+                                NeighborInfo {
                                     id: format!("lineage_{}", neighbor_id.0),
                                     bond_strength: strength,
                                     is_learned: false, // TODO: Track this
-                                })
+                                }
                             })
                             .collect();
 
@@ -298,10 +314,10 @@ impl CommandHandler {
             // ═══════════════════════════════════════════════════════════════
             // QUERY OPERATIONS
             // ═══════════════════════════════════════════════════════════════
-
             Request::QueryConscious { min_energy } => {
                 let db = self.db.read().unwrap();
-                let lineages: Vec<LineageInfo> = db.psyche
+                let lineages: Vec<LineageInfo> = db
+                    .psyche
                     .iter()
                     .filter(|(_, l)| l.is_conscious() && l.current_energy() >= min_energy)
                     .map(|(id, l)| LineageInfo {
@@ -320,7 +336,8 @@ impl CommandHandler {
 
             Request::QueryTopK { k } => {
                 let db = self.db.read().unwrap();
-                let mut lineages: Vec<_> = db.psyche
+                let mut lineages: Vec<_> = db
+                    .psyche
                     .iter()
                     .map(|(id, l)| (id, l.current_energy()))
                     .collect();
@@ -348,7 +365,8 @@ impl CommandHandler {
 
             Request::QueryTrauma { min_rigidity } => {
                 let db = self.db.read().unwrap();
-                let traumatized: Vec<LineageInfo> = db.psyche
+                let traumatized: Vec<LineageInfo> = db
+                    .psyche
                     .iter()
                     .filter(|(_, l)| l.rigidity >= min_rigidity)
                     .map(|(id, l)| LineageInfo {
@@ -376,20 +394,19 @@ impl CommandHandler {
             // ═══════════════════════════════════════════════════════════════
             // SYSTEM OPERATIONS
             // ═══════════════════════════════════════════════════════════════
-
             Request::Ping => Response::Ok(ResponseData::Pong),
 
             Request::Stats => {
                 let db = self.db.read().unwrap();
-                let stats = db.psyche.iter().fold(
-                    (0usize, 0f32),
-                    |(conscious, energy), (_, l)| {
+                let stats = db
+                    .psyche
+                    .iter()
+                    .fold((0usize, 0f32), |(conscious, energy), (_, l)| {
                         (
                             conscious + if l.is_conscious() { 1 } else { 0 },
                             energy + l.current_energy(),
                         )
-                    },
-                );
+                    });
 
                 Response::Ok(ResponseData::Stats(StatsInfo {
                     lineage_count: db.psyche.len(),
@@ -419,7 +436,10 @@ impl CommandHandler {
                 Response::Ok(ResponseData::Ack)
             }
 
-            Request::PhysicsTune { param: _param, value: _value } => {
+            Request::PhysicsTune {
+                param: _param,
+                value: _value,
+            } => {
                 // TODO: Implement physics tuning
                 Response::Ok(ResponseData::Ack)
             }
@@ -427,8 +447,9 @@ impl CommandHandler {
             // ═══════════════════════════════════════════════════════════════
             // STREAM OPERATIONS
             // ═══════════════════════════════════════════════════════════════
-
-            Request::Subscribe { events_mask: _events_mask } => {
+            Request::Subscribe {
+                events_mask: _events_mask,
+            } => {
                 // TODO: Implement event subscription
                 Response::Ok(ResponseData::Ack)
             }
@@ -495,7 +516,9 @@ mod tests {
     #[test]
     fn test_lineage_not_found() {
         let mut handler = setup_handler();
-        let response = handler.handle(Request::LineageGet { id: "nonexistent".into() });
+        let response = handler.handle(Request::LineageGet {
+            id: "nonexistent".into(),
+        });
 
         match response {
             Response::Error { code, .. } => {

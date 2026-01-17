@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-01-17
+
+### 🧠 NEW: Tri-Cortex Decision Engine (Setun Module)
+
+Introduces balanced ternary logic primitives for organic decision-making.
+
+### Added
+
+- **`Trit` Primitive**: Balanced ternary digit (`-1 / 0 / +1`)
+  - Biological semantics: Inhibition / Latent / Excitation
+  - Operations: `consensus()` (AND), `invert()`, `weight()` (as i8)
+  - Full conversions: `From<i8>`, `From<bool>`
+
+- **`Octet` Vector**: 8-dimensional personality/event vector
+  - Fixed dimensions: Curiosity, Preservation, Efficiency, Empathy, Rigidity, Volatility, Aggression, Latency
+  - `resonance(&other)` → f64: Compatibility score (-1.0 to +1.0)
+  - `dissonance(&other)` → f64: Conflict intensity (0.0 to 1.0)
+  - `pack() / unpack()`: 8-bit binary serialization
+
+- **`Quantizer` Struct**: Analog-to-Trit converter
+  - Dynamic thresholds via `mood_modifier` (-1.0 to +1.0)
+  - Positive mood → easier True; Negative mood → easier True=harder
+  - `set_mood()` for external modulation (future NABU integration)
+
+### Fixed
+
+- Clippy warnings in `psyche.rs`, `decay.rs`, `bond.rs`, `handler.rs`
+
+### Internal
+
+- 15 new unit tests for Setun module
+- 53/53 total tests passing
+
+---
+
 ## [1.0.0] - 2026-01-17
 
 ### 🦀 MAJOR: Rust Pivot

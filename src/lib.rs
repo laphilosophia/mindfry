@@ -35,6 +35,7 @@
 pub mod arena;
 pub mod dynamics;
 pub mod graph;
+pub mod setun;
 
 // Feature-gated modules
 #[cfg(feature = "server")]
@@ -45,9 +46,10 @@ pub mod protocol;
 pub mod ffi;
 
 // Re-exports
-pub use arena::{Lineage, LineageId, PsycheArena, Engram, StrataArena};
-pub use dynamics::{DecayEngine, DecayConfig};
-pub use graph::{Bond, BondId, BondGraph};
+pub use arena::{Engram, Lineage, LineageId, PsycheArena, StrataArena};
+pub use dynamics::{DecayConfig, DecayEngine};
+pub use graph::{Bond, BondGraph, BondId};
+pub use setun::{Octet, Quantizer, Trit};
 
 /// Default maximum lineages in psyche arena
 pub const DEFAULT_MAX_LINEAGES: usize = 1 << 20; // 1M lineages

@@ -261,32 +261,30 @@ impl BondGraph {
         &self,
         lineage: LineageId,
     ) -> impl Iterator<Item = (LineageId, f32)> + '_ {
-        self.neighbors(lineage)
-            .iter()
-            .filter_map(move |&bond_id| {
-                let bond = self.get(bond_id)?;
-                let neighbor = bond.other(lineage);
-                Some((neighbor, bond.current_strength()))
-            })
+        self.neighbors(lineage).iter().filter_map(move |&bond_id| {
+            let bond = self.get(bond_id)?;
+            let neighbor = bond.other(lineage);
+            Some((neighbor, bond.current_strength()))
+        })
     }
 
     /// Remove a bond
     pub fn disconnect(&mut self, id: BondId) -> bool {
-        if let Some(bond) = self.bonds.get_mut(id.index()) {
-            if bond.is_active() {
-                // Remove from adjacency lists
-                if let Some(adj) = self.adjacency.get_mut(bond.source.index()) {
-                    adj.retain(|&bid| bid != id);
-                }
-                if let Some(adj) = self.adjacency.get_mut(bond.target.index()) {
-                    adj.retain(|&bid| bid != id);
-                }
-
-                bond.flags.remove(BondFlags::ACTIVE);
-                self.free_list.push(id);
-                self.count -= 1;
-                return true;
+        if let Some(bond) = self.bonds.get_mut(id.index())
+            && bond.is_active()
+        {
+            // Remove from adjacency lists
+            if let Some(adj) = self.adjacency.get_mut(bond.source.index()) {
+                adj.retain(|&bid| bid != id);
             }
+            if let Some(adj) = self.adjacency.get_mut(bond.target.index()) {
+                adj.retain(|&bid| bid != id);
+            }
+
+            bond.flags.remove(BondFlags::ACTIVE);
+            self.free_list.push(id);
+            self.count -= 1;
+            return true;
         }
         false
     }
@@ -304,10 +302,10 @@ impl BondGraph {
         };
 
         for &bond_id in search_in {
-            if let Some(bond) = self.get(bond_id) {
-                if bond.other(if find_target == b { a } else { b }) == find_target {
-                    return Some(bond_id);
-                }
+            if let Some(bond) = self.get(bond_id)
+                && bond.other(if find_target == b { a } else { b }) == find_target
+            {
+                return Some(bond_id);
             }
         }
         None
@@ -428,7 +426,9 @@ mod tests {
     #[test]
     fn test_bond_graph_find() {
         let mut graph = BondGraph::with_capacity(100, 1000);
-        let id = graph.connect(Bond::new(LineageId(5), LineageId(10), 0.7)).unwrap();
+        let id = graph
+            .connect(Bond::new(LineageId(5), LineageId(10), 0.7))
+            .unwrap();
 
         assert_eq!(graph.find_bond(LineageId(5), LineageId(10)), Some(id));
         assert_eq!(graph.find_bond(LineageId(10), LineageId(5)), Some(id)); // Bidirectional
@@ -438,7 +438,9 @@ mod tests {
     #[test]
     fn test_bond_graph_disconnect() {
         let mut graph = BondGraph::with_capacity(100, 1000);
-        let id = graph.connect(Bond::new(LineageId(0), LineageId(1), 0.8)).unwrap();
+        let id = graph
+            .connect(Bond::new(LineageId(0), LineageId(1), 0.8))
+            .unwrap();
 
         assert_eq!(graph.len(), 1);
         assert!(graph.disconnect(id));

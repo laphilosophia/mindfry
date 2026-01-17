@@ -6,7 +6,7 @@
 use rayon::prelude::*;
 
 use crate::arena::{Lineage, PsycheArena};
-use crate::graph::{BondGraph, BOND_PRUNE_THRESHOLD};
+use crate::graph::{BOND_PRUNE_THRESHOLD, BondGraph};
 
 /// Decay engine configuration
 #[derive(Debug, Clone)]
@@ -58,10 +58,9 @@ impl DecayLUT {
 
         // Logarithmic time boundaries (seconds)
         let time_boundaries: Vec<f32> = vec![
-            0.0, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 30.0, 60.0, 120.0,
-            300.0, 600.0, 900.0, 1800.0, 3600.0, 7200.0, 14400.0, 21600.0,
-            43200.0, 86400.0, 172800.0, 259200.0, 432000.0, 604800.0,
-            1209600.0, 2592000.0, 5184000.0, 7776000.0, 15552000.0, 31104000.0,
+            0.0, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 30.0, 60.0, 120.0, 300.0, 600.0, 900.0,
+            1800.0, 3600.0, 7200.0, 14400.0, 21600.0, 43200.0, 86400.0, 172800.0, 259200.0,
+            432000.0, 604800.0, 1209600.0, 2592000.0, 5184000.0, 7776000.0, 15552000.0, 31104000.0,
         ];
 
         let mut data = Vec::with_capacity(RATE_BUCKETS * TIME_BUCKETS);
@@ -74,8 +73,7 @@ impl DecayLUT {
                 (10.0_f32).powf((r as f32 / 255.0) * 3.0 - 6.0)
             };
 
-            for t in 0..TIME_BUCKETS {
-                let elapsed = time_boundaries[t];
+            for &elapsed in time_boundaries.iter().take(TIME_BUCKETS) {
                 let factor = (-rate * elapsed).exp();
                 data.push(factor);
             }
@@ -191,20 +189,11 @@ impl DecayEngine {
     }
 
     /// Batch compute decay factors (for parallel processing)
-    pub fn batch_decay_factors(
-        &self,
-        lineages: &[Lineage],
-    ) -> Vec<f32> {
+    pub fn batch_decay_factors(&self, lineages: &[Lineage]) -> Vec<f32> {
         if self.config.parallel {
-            lineages
-                .par_iter()
-                .map(|l| l.current_energy())
-                .collect()
+            lineages.par_iter().map(|l| l.current_energy()).collect()
         } else {
-            lineages
-                .iter()
-                .map(|l| l.current_energy())
-                .collect()
+            lineages.iter().map(|l| l.current_energy()).collect()
         }
     }
 }
