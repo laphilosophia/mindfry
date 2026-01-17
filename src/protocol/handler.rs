@@ -153,21 +153,58 @@ impl CommandHandler {
                 }
             }
 
-            Request::LineageStimulate { id, delta } => {
+            Request::LineageStimulate { id, delta, flags } => {
+                use crate::dynamics::SynapseEngine;
+                use crate::protocol::StimulateFlags;
+
+                let stim_flags = StimulateFlags::from_bits_truncate(flags);
+                let no_propagate = stim_flags.contains(StimulateFlags::NO_PROPAGATE);
+
                 let mut db = self.db.write().unwrap();
                 let key = self.hash_key(&id);
 
                 match db.psyche.lookup(key) {
-                    Some(lineage_id) => match db.psyche.get_mut(lineage_id) {
-                        Some(lineage) => {
-                            lineage.stimulate(delta);
-                            Response::Ok(ResponseData::Ack)
+                    Some(lineage_id) => {
+                        // Phase 1: Stimulate the target
+                        let found = match db.psyche.get_mut(lineage_id) {
+                            Some(lineage) => {
+                                lineage.stimulate(delta);
+                                true
+                            }
+                            None => false,
+                        };
+
+                        if !found {
+                            return Response::Error {
+                                code: ErrorCode::LineageNotFound,
+                                message: format!("Lineage '{}' not found", id),
+                            };
                         }
-                        None => Response::Error {
-                            code: ErrorCode::LineageNotFound,
-                            message: format!("Lineage '{}' not found", id),
-                        },
-                    },
+
+                        // Phase 2: Propagate (after first borrow ends)
+                        if !no_propagate {
+                            tracing::debug!(
+                                "[Propagate] Starting from '{}' with delta {}",
+                                id,
+                                delta
+                            );
+                            // Use a temporary synapse engine
+                            let synapse = SynapseEngine::new();
+                            // SAFETY: bonds is read-only during propagate, psyche is mutated.
+                            // We use raw pointers to bypass Rust's borrow checker limitation
+                            // with RwLockWriteGuard which doesn't allow partial borrows.
+                            let bonds_ptr = &db.bonds as *const _;
+                            let affected = synapse.propagate(
+                                &mut db.psyche,
+                                unsafe { &*bonds_ptr },
+                                lineage_id,
+                                delta,
+                            );
+                            tracing::debug!("[Propagate] Affected {} nodes", affected);
+                        }
+
+                        Response::Ok(ResponseData::Ack)
+                    }
                     None => Response::Error {
                         code: ErrorCode::LineageNotFound,
                         message: format!("Lineage '{}' not found", id),

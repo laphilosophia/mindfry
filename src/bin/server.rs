@@ -216,8 +216,11 @@ fn log_request(request: &Request) {
         Request::LineageGet { id, flags } => {
             info!("  → LINEAGE.GET '{}' [flags:0x{:02X}]", id, flags)
         }
-        Request::LineageStimulate { id, delta } => {
-            info!("  → LINEAGE.STIMULATE '{}' +{}", id, delta)
+        Request::LineageStimulate { id, delta, flags } => {
+            info!(
+                "  → LINEAGE.STIMULATE '{}' +{} [flags:0x{:02X}]",
+                id, delta, flags
+            )
         }
         Request::LineageForget { id } => info!("  → LINEAGE.FORGET '{}'", id),
         Request::BondConnect { source, target, .. } => {

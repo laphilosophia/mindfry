@@ -28,6 +28,17 @@ bitflags! {
     }
 }
 
+bitflags! {
+    /// Stimulate flags for controlling propagation behavior
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+    pub struct StimulateFlags: u8 {
+        /// Normal behavior - propagate to neighbors
+        const NONE = 0x00;
+        /// Surgical mode - don't propagate to neighbors
+        const NO_PROPAGATE = 0x01;
+    }
+}
+
 /// Status of lineage lookup result
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[repr(u8)]
@@ -64,6 +75,8 @@ pub enum Request {
     LineageStimulate {
         id: String,
         delta: f32,
+        /// Stimulate flags (default: auto-propagate)
+        flags: u8,
     },
     LineageForget {
         id: String,

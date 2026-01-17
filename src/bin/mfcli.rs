@@ -62,9 +62,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 eprintln!("Usage: mfcli stimulate <id> <delta>");
                 return Ok(());
             }
+            let flags: u8 = if args.len() > 4 {
+                args[4].parse().unwrap_or(0)
+            } else {
+                0
+            };
             Request::LineageStimulate {
                 id: args[2].clone(),
                 delta: args[3].parse()?,
+                flags,
             }
         }
         "forget" => {

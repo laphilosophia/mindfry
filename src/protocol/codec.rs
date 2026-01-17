@@ -80,9 +80,10 @@ impl MfbpCodec {
             | Request::BondNeighbors { id } => {
                 Self::write_string(&mut payload, id);
             }
-            Request::LineageStimulate { id, delta } => {
+            Request::LineageStimulate { id, delta, flags } => {
                 Self::write_string(&mut payload, id);
                 payload.extend_from_slice(&delta.to_le_bytes());
+                payload.push(*flags);
             }
             Request::BondConnect {
                 source,
@@ -341,7 +342,13 @@ impl MfbpCodec {
             OpCode::LineageStimulate => {
                 let id = Self::read_string(payload, &mut cursor)?;
                 let delta = Self::read_f32(payload, &mut cursor)?;
-                Request::LineageStimulate { id, delta }
+                // Optional flags (backward compat: default = 0 = auto-propagate)
+                let flags = if cursor < payload.len() {
+                    payload[cursor]
+                } else {
+                    0
+                };
+                Request::LineageStimulate { id, delta, flags }
             }
             OpCode::LineageForget => {
                 let id = Self::read_string(payload, &mut cursor)?;

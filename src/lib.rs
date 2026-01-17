@@ -72,6 +72,8 @@ pub struct MindFry {
     pub decay: DecayEngine,
     /// Decision-making brain (Setun ternary logic)
     pub cortex: Cortex,
+    /// Signal propagation engine
+    pub synapse: dynamics::SynapseEngine,
     /// Persistent storage (optional)
     #[cfg(feature = "server")]
     pub store: Option<std::sync::Arc<persistence::AkashicStore>>,
@@ -104,6 +106,7 @@ impl MindFry {
             bonds,
             decay,
             cortex,
+            synapse: dynamics::SynapseEngine::new(),
             #[cfg(feature = "server")]
             store: None,
         }

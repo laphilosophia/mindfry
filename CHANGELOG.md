@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.0] - 2026-01-17
+
+### 🌱 Phase 5: Auto-Propagation - "Life Has Begun"
+
+When `stimulate(A)` is called, energy automatically propagates through bonds.
+
+### Added
+
+- **SynapseEngine Integration**: Handler wires synapse.propagate() on stimulate
+- **StimulateFlags**: Control propagation behavior
+  - `0x00` (default): Auto-propagate through bonds
+  - `0x01` `NO_PROPAGATE`: Surgical mode (direct update only)
+- **The Domino Test**: A→B→C chain verification
+  - A: +0.9 (direct)
+  - B: +0.625 (hop 1, damped)
+  - C: +0.250 (hop 2, damped) ✓
+
+### Technical
+
+- Used raw pointer trick to bypass RwLockWriteGuard borrow checker limitation
+- SAFETY: bonds are read-only during propagate, psyche is mutated
+
+---
+
 ## [1.5.0] - 2026-01-17
 
 ### ⚠️ Breaking Change: Response Framing
