@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.0] - 2026-01-24
+
+### 🛡️ Stability Layer - "Self-Healing Infrastructure"
+
+Zero startup delay with async resurrection and progressive availability.
+
+### Added
+
+- **Stability Module** (`src/stability/`):
+  - `exhaustion.rs`: Circuit breaker with adaptive thresholds (μ±kσ AutoTuner)
+  - `health.rs`: Self-diagnostic pulse monitoring
+  - `shutdown.rs`: Shutdown experience recording (graceful/forced/crash/coma)
+  - `warmup.rs`: Progressive availability tracking during resurrection
+- **System Lineages** (`_system.*`): Reserved namespace for stability tracking
+  - `_system.health`, `_system.state`, `_system.shock`, `_system.coma`
+- **Background Snapshot Loading**: Server accepts connections immediately
+  - Network binds in < 100ms
+  - Resurrection runs in async background thread
+- **`ErrorCode::WarmingUp` (0x03)**: New error code for clients during resurrection
+- **Exhaustion Backpressure**: Write rejection under high load
+- **Graceful Shutdown**: Ctrl+C handling with pre-shutdown snapshot
+
+### Technical
+
+- 83/83 tests passing
+- 1.5 GB snapshot: ~5.4s async load (verified)
+
+---
+
 ## [1.6.0] - 2026-01-17
 
 ### 🌱 Phase 5: Auto-Propagation - "Life Has Begun"

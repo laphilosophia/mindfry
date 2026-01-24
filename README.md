@@ -5,8 +5,8 @@
 > _"Databases store data. MindFry_ **_feels_** _it."_
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-74%20passing-brightgreen)]()
-[![Version](https://img.shields.io/badge/version-1.6.0-blue)]()
+[![Tests](https://img.shields.io/badge/tests-83%20passing-brightgreen)]()
+[![Version](https://img.shields.io/badge/version-1.7.0-blue)]()
 
 ---
 
@@ -35,14 +35,18 @@ Decisions are made using **Balanced Ternary Logic** (Setun):
 - `0` = Unknown / Neutral
 - `-1` = False / Inhibition
 
-The database has a **Personality Octet** (8 dimensions) and a **Mood** that affects query results.
+The database has a **Personality Octet** (8 dimensions) and a **Mood** that affects data prioritization.
 
 ### ❤️ Mood & Personality
 
-A depressed database behaves differently than a euphoric one:
+> **Note:** Mood affects which data surfaces first, not whether your requests succeed. All data remains accessible — mood just influences the "attention" priority.
 
-- **High Mood** → Lower consciousness threshold → More data accessible
-- **Low Mood** → Higher threshold → Data feels "distant"
+Mood modulates the consciousness threshold:
+
+- **High Mood** → More memories feel "close" and accessible
+- **Low Mood** → Only the most important memories surface naturally
+
+**Override anytime:** Use `BYPASS_FILTERS` flag for guaranteed access regardless of mood.
 
 ### 🕸️ Synaptic Propagation
 
