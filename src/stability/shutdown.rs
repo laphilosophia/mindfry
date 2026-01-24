@@ -63,20 +63,12 @@ impl ShutdownReason {
 }
 
 /// Tracks shutdown experiences
+#[derive(Default)]
 pub struct ShutdownTracker {
     /// Last shutdown reason (if any)
     pub last_reason: Option<ShutdownReason>,
     /// Timestamp of last shutdown
     pub last_timestamp: Option<u64>,
-}
-
-impl Default for ShutdownTracker {
-    fn default() -> Self {
-        Self {
-            last_reason: None,
-            last_timestamp: None,
-        }
-    }
 }
 
 impl ShutdownTracker {
