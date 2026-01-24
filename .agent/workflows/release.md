@@ -4,6 +4,11 @@ description: Release workflow for MindFry - version bump, test, publish, git tag
 
 # Release Workflow
 
+**Related Repos:**
+
+- SDK: `C:\Development\@cluster127\mindfry-sdk`
+- Docs: `C:\Development\@cluster127\mindfry-docs`
+
 // turbo-all
 
 ## Pre-release Checks
