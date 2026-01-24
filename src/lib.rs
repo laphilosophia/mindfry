@@ -1,4 +1,4 @@
-//! # MindFry - The World's First Ephemeral Graph Database
+//! # MindFry - Memory with a Conscience
 //!
 //! A Cognitive DB Engine that treats data as living neurons, not static records.
 //!
@@ -42,6 +42,8 @@ pub mod setun;
 pub mod persistence;
 #[cfg(feature = "server")]
 pub mod protocol;
+#[cfg(feature = "server")]
+pub mod stability;
 
 pub mod ffi;
 
@@ -125,29 +127,37 @@ impl MindFry {
     /// On corruption, logs error and returns Ok(false) for graceful degradation.
     #[cfg(feature = "server")]
     pub fn resurrect(&mut self) -> Result<bool, persistence::AkashicError> {
+        use std::time::Instant;
+
         let store = match &self.store {
             Some(s) => s,
             None => return Ok(false),
         };
 
         // Check for latest snapshot
+        let t0 = Instant::now();
         let snapshot = match store.latest_snapshot()? {
             Some(s) => s,
             None => return Ok(false),
         };
+        tracing::debug!("Snapshot loaded in {:?}", t0.elapsed());
 
         tracing::info!(
-            "🔄 Restoring from snapshot '{}'...",
-            snapshot.meta.name.as_deref().unwrap_or("unnamed")
+            "Restoring '{}' ({} lineages, {} KB)",
+            snapshot.meta.name.as_deref().unwrap_or("unnamed"),
+            snapshot.meta.lineage_count,
+            snapshot.meta.size_bytes / 1024
         );
 
         // Restore arenas
+        let t1 = Instant::now();
         let (psyche, strata, bonds, _physics) = store.restore_snapshot(
             &snapshot,
             self.psyche.capacity(),
             self.bonds.capacity(),
             64, // strata depth
         )?;
+        tracing::debug!("Arenas restored in {:?}", t1.elapsed());
 
         self.psyche = psyche;
         self.strata = strata;
@@ -198,6 +208,81 @@ impl MindFry {
         if let Some(ref store) = self.store {
             if let Err(e) = store.indexer().remove(key) {
                 tracing::warn!("Failed to remove lineage '{}' from index: {}", key, e);
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // STABILITY LAYER - SYSTEM LINEAGES
+    // ═══════════════════════════════════════════════════════════════
+
+    /// Bootstrap system lineages for stability tracking
+    ///
+    /// Creates `_system.*` lineages if they don't exist.
+    /// Should be called after resurrection or on fresh start.
+    #[cfg(feature = "server")]
+    pub fn bootstrap_system_lineages(&mut self) {
+        use stability::lineages;
+
+        // Health lineage - self-diagnostic
+        self.ensure_lineage(lineages::HEALTH, 1.0);
+
+        // State lineage - exhaustion level
+        self.ensure_lineage(lineages::STATE, 1.0);
+
+        // Resistance lineage - built from challenges
+        self.ensure_lineage(lineages::RESISTANCE, 0.5);
+
+        tracing::debug!("System lineages bootstrapped");
+    }
+
+    /// Ensure a lineage exists, create if not
+    #[cfg(feature = "server")]
+    fn ensure_lineage(&mut self, key: &str, initial_energy: f32) {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+
+        let mut hasher = DefaultHasher::new();
+        key.hash(&mut hasher);
+        let hash = hasher.finish();
+
+        if self.psyche.lookup(hash).is_none() {
+            let lineage = Lineage::new(initial_energy);
+            let id = self.psyche.alloc_with_key(hash, lineage);
+            self.sync_index_insert(key, id);
+            tracing::trace!("Created system lineage: {}", key);
+        }
+    }
+
+    /// Get energy of a system lineage
+    #[cfg(feature = "server")]
+    pub fn get_system_energy(&self, key: &str) -> Option<f32> {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+
+        let mut hasher = DefaultHasher::new();
+        key.hash(&mut hasher);
+        let hash = hasher.finish();
+
+        self.psyche
+            .lookup(hash)
+            .and_then(|id| self.psyche.get(id))
+            .map(|l| l.current_energy())
+    }
+
+    /// Stimulate a system lineage
+    #[cfg(feature = "server")]
+    pub fn stimulate_system(&mut self, key: &str, delta: f32) {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+
+        let mut hasher = DefaultHasher::new();
+        key.hash(&mut hasher);
+        let hash = hasher.finish();
+
+        if let Some(id) = self.psyche.lookup(hash) {
+            if let Some(lineage) = self.psyche.get_mut(id) {
+                lineage.stimulate(delta);
             }
         }
     }

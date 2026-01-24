@@ -271,6 +271,8 @@ pub enum ErrorCode {
     InvalidOpCode = 0x01,
     /// Malformed payload
     MalformedPayload = 0x02,
+    /// Server is warming up (resurrection in progress)
+    WarmingUp = 0x03,
     /// Lineage not found
     LineageNotFound = 0x10,
     /// Lineage already exists
@@ -290,6 +292,7 @@ impl ErrorCode {
         match byte {
             0x01 => Self::InvalidOpCode,
             0x02 => Self::MalformedPayload,
+            0x03 => Self::WarmingUp,
             0x10 => Self::LineageNotFound,
             0x11 => Self::LineageExists,
             0x20 => Self::BondNotFound,

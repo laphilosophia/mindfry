@@ -22,6 +22,9 @@ pub struct CommandHandler {
     start_time: Instant,
     /// Is decay frozen?
     is_frozen: bool,
+    /// Exhaustion monitor for backpressure
+    #[allow(dead_code)] // Reserved for operation cost tracking
+    exhaustion: crate::stability::ExhaustionMonitor,
 }
 
 impl CommandHandler {
@@ -31,11 +34,49 @@ impl CommandHandler {
             db,
             start_time: Instant::now(),
             is_frozen: false,
+            exhaustion: crate::stability::ExhaustionMonitor::default(),
         }
     }
 
     /// Handle a request and return a response
     pub fn handle(&mut self, request: Request) -> Response {
+        // ═══════════════════════════════════════════════════════════════
+        // EXHAUSTION CHECK (Backpressure)
+        // ═══════════════════════════════════════════════════════════════
+        let exhaustion_level = {
+            let db = self.db.read().unwrap();
+            let energy = db
+                .get_system_energy(crate::stability::lineages::STATE)
+                .unwrap_or(1.0);
+            crate::stability::ExhaustionLevel::from_energy(energy)
+        };
+
+        // Check if request is a write operation
+        let is_write = matches!(
+            request,
+            Request::LineageCreate { .. }
+                | Request::LineageStimulate { .. }
+                | Request::LineageForget { .. }
+                | Request::BondConnect { .. }
+                | Request::BondReinforce { .. }
+                | Request::BondSever { .. }
+        );
+
+        // Backpressure based on exhaustion level
+        if !exhaustion_level.allows_operations() {
+            return Response::Error {
+                code: ErrorCode::Internal,
+                message: "System exhausted - try again later".into(),
+            };
+        }
+
+        if is_write && !exhaustion_level.allows_writes() {
+            return Response::Error {
+                code: ErrorCode::Internal,
+                message: "System exhausted - reads only".into(),
+            };
+        }
+
         match request {
             // ═══════════════════════════════════════════════════════════════
             // LINEAGE OPERATIONS

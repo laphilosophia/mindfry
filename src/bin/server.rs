@@ -54,8 +54,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Banner
     println!();
     println!("  ╔═══════════════════════════════════════════════════════════╗");
-    println!("  ║  🧠🔥 MindFry - The World's First Ephemeral Graph Database  ║");
-    println!("  ║                     COGNITIVE DB ENGINE                    ║");
+    println!("  ║                  Memory with a Conscience                 ║");
+    println!("  ║                    COGNITIVE DB ENGINE                    ║");
     println!("  ╚═══════════════════════════════════════════════════════════╝");
     println!();
 
@@ -63,57 +63,169 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let server_config = ServerConfig::default();
 
     // ═══════════════════════════════════════════════════════════════
-    // RESURRECTION PROTOCOL
+    // INITIALIZATION SEQUENCE (Network-first for zero delay)
     // ═══════════════════════════════════════════════════════════════
 
-    // 1. Mount Storage
+    println!("  ┌─ Initialization ─────────────────────────────────────────┐");
+
+    // Step 1: Mount Storage
+    print!("  │ 📁 Mounting Akashic Records...");
+    std::io::Write::flush(&mut std::io::stdout())?;
     let store_config = AkashicConfig::default();
     let store = match AkashicStore::open(store_config) {
         Ok(s) => {
-            info!("💾 Storage mounted: ./mindfry_data");
+            println!(" ✓");
             Arc::new(s)
         }
         Err(e) => {
+            println!(" ✗");
             error!("Failed to open storage: {}", e);
             return Err(e.into());
         }
     };
 
-    // 2. Create MindFry with storage attached
+    // Step 2: Initialize Psyche Arena (empty)
+    print!("  │ 🧠 Initializing Psyche Arena...");
+    std::io::Write::flush(&mut std::io::stdout())?;
     let db_config = MindFryConfig::default();
-    let mut db = MindFry::with_config(db_config).with_store(Arc::clone(&store));
+    let db = MindFry::with_config(db_config).with_store(Arc::clone(&store));
+    println!(" ✓");
 
-    // 3. Attempt resurrection from latest snapshot
-    match db.resurrect() {
-        Ok(true) => info!("🧬 Resurrection successful"),
-        Ok(false) => info!("🌱 Genesis mode: Starting fresh"),
+    // Step 3: Bind Network (before resurrection for zero delay)
+    print!("  │ 🌐 Binding network interface...");
+    std::io::Write::flush(&mut std::io::stdout())?;
+    let addr = format!("{}:{}", server_config.host, server_config.port);
+    let listener = TcpListener::bind(&addr).await?;
+    println!(" ✓ ({})", addr);
+
+    // Wrap DB in Arc<RwLock> for sharing
+    let db = Arc::new(RwLock::new(db));
+
+    // Step 4: Setup warmup tracker
+    let warmup = mindfry::stability::WarmupTracker::new();
+
+    // Check if resurrection is needed
+    let has_snapshot = store
+        .list_snapshots()
+        .map(|s| !s.is_empty())
+        .unwrap_or(false);
+
+    if has_snapshot {
+        print!("  │ 🔄 Resurrection...");
+        std::io::Write::flush(&mut std::io::stdout())?;
+        warmup.begin_resurrection();
+        println!(" (async)");
+
+        // Spawn async resurrection
+        let db_clone = Arc::clone(&db);
+        let warmup_clone = warmup.clone();
+        tokio::spawn(async move {
+            let start = std::time::Instant::now();
+
+            // Perform resurrection
+            let result = {
+                let mut db = db_clone.write().unwrap();
+                db.resurrect()
+            };
+
+            match result {
+                Ok(true) => {
+                    // Bootstrap system lineages after resurrection
+                    {
+                        let mut db = db_clone.write().unwrap();
+                        db.bootstrap_system_lineages();
+                    }
+                    info!("✅ Resurrection complete in {:?}", start.elapsed());
+                }
+                Ok(false) => {
+                    info!("🌱 No snapshot found, genesis mode");
+                }
+                Err(e) => {
+                    warn!("⚠️ Resurrection failed: {}", e);
+                }
+            }
+
+            warmup_clone.mark_ready();
+        });
+    } else {
+        print!("  │ 🌱 Genesis mode...");
+        std::io::Write::flush(&mut std::io::stdout())?;
+        // Bootstrap system lineages for fresh start
+        {
+            let mut db = db.write().unwrap();
+            db.bootstrap_system_lineages();
+        }
+        println!(" ✓");
+    }
+
+    println!("  └────────────────────────────────────────────────────────────┘");
+    println!();
+
+    // Summary
+    info!(
+        "Ready | {} lineages | {} bonds | max {} connections | warmup: {:?}",
+        db.read().unwrap().psyche.len(),
+        db.read().unwrap().bonds.len(),
+        server_config.max_connections,
+        warmup.state()
+    );
+
+    // ═══════════════════════════════════════════════════════════════
+    // MAIN LOOP WITH GRACEFUL SHUTDOWN
+    // ═══════════════════════════════════════════════════════════════
+
+    let shutdown_result = tokio::select! {
+        result = accept_loop(listener, Arc::clone(&db)) => {
+            // Accept loop returned (error or explicit stop)
+            result
+        }
+        _ = tokio::signal::ctrl_c() => {
+            info!("🛑 Shutdown signal received (Ctrl+C)");
+            Ok(mindfry::stability::ShutdownReason::Signal { signal: 2 }) // SIGINT
+        }
+    };
+
+    // ═══════════════════════════════════════════════════════════════
+    // GRACEFUL SHUTDOWN SEQUENCE
+    // ═══════════════════════════════════════════════════════════════
+
+    match shutdown_result {
+        Ok(reason) => {
+            info!("📝 Recording shutdown experience: {}", reason.description());
+
+            // Take final snapshot before shutdown
+            {
+                let db_guard = db.read().unwrap();
+                if let Some(ref store) = db_guard.store {
+                    match store.take_snapshot(
+                        Some("pre-shutdown"),
+                        &db_guard.psyche,
+                        &db_guard.strata,
+                        &db_guard.bonds,
+                        Some(&db_guard.cortex),
+                        mindfry::persistence::PhysicsSnapshot::default(),
+                    ) {
+                        Ok(meta) => info!("💾 Pre-shutdown snapshot saved: {}", meta.id),
+                        Err(e) => warn!("⚠️ Failed to save shutdown snapshot: {}", e),
+                    }
+                }
+            }
+
+            info!("😴 MindFry going to sleep... Goodbye!");
+        }
         Err(e) => {
-            warn!("⚠️ Resurrection failed: {}. Starting fresh.", e);
-            // Graceful degradation - continue with empty state
+            error!("💔 Server error: {}", e);
         }
     }
 
-    let db = Arc::new(RwLock::new(db));
+    Ok(())
+}
 
-    info!(
-        "Psyche Arena capacity: {} lineages",
-        db.read().unwrap().psyche.capacity()
-    );
-    info!(
-        "Bond Graph capacity: {} bonds",
-        db.read().unwrap().bonds.len()
-    );
-
-    // Start TCP server
-    let addr = format!("{}:{}", server_config.host, server_config.port);
-    let listener = TcpListener::bind(&addr).await?;
-    info!("🌐 MFBP Server listening on {}", addr);
-    info!(
-        "Ready to accept connections (max: {})",
-        server_config.max_connections
-    );
-
-    // Accept loop
+/// Accept loop - runs until error or shutdown
+async fn accept_loop(
+    listener: TcpListener,
+    db: Arc<RwLock<MindFry>>,
+) -> Result<mindfry::stability::ShutdownReason, Box<dyn std::error::Error + Send + Sync>> {
     loop {
         match listener.accept().await {
             Ok((socket, peer)) => {
@@ -132,6 +244,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             Err(e) => {
                 error!("Accept error: {}", e);
+                return Err(e.into());
             }
         }
     }

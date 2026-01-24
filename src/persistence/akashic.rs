@@ -217,9 +217,18 @@ impl AkashicStore {
 
     /// Get the latest snapshot
     pub fn latest_snapshot(&self) -> Result<Option<Snapshot>> {
-        if let Some((_, value)) = self.snapshots.last()? {
-            let snapshot: Snapshot = bincode::deserialize(&value)?;
-            return Ok(Some(snapshot));
+        // Fast path: check if any snapshots exist
+        if self.snapshot_meta.is_empty() {
+            return Ok(None);
+        }
+
+        // Get latest metadata (fast - small data)
+        if let Some((key, _)) = self.snapshot_meta.last()? {
+            // Then load the full snapshot data using the key
+            if let Some(value) = self.snapshots.get(&key)? {
+                let snapshot: Snapshot = bincode::deserialize(&value)?;
+                return Ok(Some(snapshot));
+            }
         }
         Ok(None)
     }
