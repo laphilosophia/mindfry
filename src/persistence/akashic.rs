@@ -347,7 +347,7 @@ impl AkashicStore {
         let raw = bincode::serialize(&sparse)?;
 
         // Compress with zstd level 3 (fast)
-        let compressed = zstd::encode_all(&raw[..], 3).map_err(|e| AkashicError::Io(e))?;
+        let compressed = zstd::encode_all(&raw[..], 3).map_err(AkashicError::Io)?;
 
         Ok(compressed)
     }
@@ -385,7 +385,7 @@ impl AkashicStore {
     ) -> Result<StrataArena> {
         // v2 format: zstd compressed sparse Vec<(u32, Engram)>
         // Decompress first
-        let decompressed = zstd::decode_all(data).map_err(|e| AkashicError::Io(e))?;
+        let decompressed = zstd::decode_all(data).map_err(AkashicError::Io)?;
 
         let sparse: Vec<(u32, Engram)> = bincode::deserialize(&decompressed)?;
 
