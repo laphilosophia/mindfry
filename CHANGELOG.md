@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.0] - 2026-01-25
+
+### 🩹 Crash Recovery - "Trauma-Aware Restart"
+
+MindFry now remembers how it was shut down and adapts accordingly.
+
+### Added
+
+- **`recovery.rs`**: Trauma detection on startup
+  - `RecoveryState::Normal` — Clean restart
+  - `RecoveryState::Shock` — Unclean shutdown (no graceful marker)
+  - `RecoveryState::Coma` — Prolonged downtime (>1 hour)
+- **`RecoveryAnalyzer`**: Analyzes shutdown marker on startup
+- **`ShutdownMarker`**: Persisted to sled before graceful exit
+- **Warmup Enforcement**: Handler rejects ops during resurrection
+  - `Ping` and `Stats` always allowed (exempt)
+  - Other ops return `ErrorCode::WarmingUp`
+- **Stability Benchmark**: 10 new benchmarks, all sub-microsecond
+  - `recovery_analyzer_analyze`: 1.21 ns
+  - `warmup_tracker_is_ready`: 1.19 ns
+  - `exhaustion_level_from_energy`: 715 ps
+
+### Changed
+
+- `CommandHandler` now accepts `WarmupTracker` via `with_warmup()`
+- `AkashicStore` has `read_shutdown_marker()` / `write_shutdown_marker()`
+
+### Technical
+
+- 89/89 tests passing (+6 recovery tests)
+- Server startup shows recovery state: `(clean)`, `(SHOCK detected)`, `(COMA detected)`
+
+---
+
 ## [1.7.0] - 2026-01-24
 
 ### 🛡️ Stability Layer - "Self-Healing Infrastructure"
