@@ -165,6 +165,40 @@ impl StrataArena {
     pub fn as_slice(&self) -> &[Engram] {
         &self.data
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    // SNAPSHOT RESTORATION (Internal API)
+    // ═══════════════════════════════════════════════════════════════
+    //
+    // INVARIANT: timestamp == 0 means "empty slot"
+    // This is now part of the snapshot ABI (v2 format).
+    // Do not use set_at in cognitive paths — only for:
+    //   - Snapshot restore
+    //   - Migration
+    //   - Forensic load
+    // ═══════════════════════════════════════════════════════════════
+
+    /// Set engram at specific global index (for deserialization only)
+    ///
+    /// # Safety (Logical)
+    /// This bypasses normal ring-buffer semantics.
+    /// Only use for snapshot restoration.
+    #[doc(hidden)]
+    pub(crate) fn set_at(&mut self, index: usize, engram: Engram) {
+        if index < self.data.len() {
+            self.data[index] = engram;
+        }
+    }
+
+    /// Restore from sparse representation
+    ///
+    /// # Arguments
+    /// * `sparse` - Vec of (global_index, engram) pairs
+    pub(crate) fn restore_from_sparse(&mut self, sparse: Vec<(u32, Engram)>) {
+        for (index, engram) in sparse {
+            self.set_at(index as usize, engram);
+        }
+    }
 }
 
 /// Iterator over engram history

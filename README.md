@@ -5,8 +5,8 @@
 > _"Databases store data. MindFry_ **_feels_** _it."_
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-89%20passing-brightgreen)]()
-[![Version](https://img.shields.io/badge/version-1.8.0-blue)]()
+[![Tests](https://img.shields.io/badge/tests-90%20passing-brightgreen)]()
+[![Version](https://img.shields.io/badge/version-1.9.0-blue)]()
 
 ---
 

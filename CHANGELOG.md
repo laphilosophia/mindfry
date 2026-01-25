@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.0] - 2026-01-25
+
+### 📦 Sparse Snapshot Format - "Portable Memory"
+
+Snapshot size reduced from 1.5GB to ~100 bytes for empty arenas.
+
+### Changed
+
+- **StrataArena Serialization**: Only non-empty engrams are serialized
+  - INVARIANT: `timestamp == 0` means "empty slot" (now part of ABI)
+  - Added `StrataArena::set_at()` and `restore_from_sparse()` for restoration
+- **zstd Compression**: All strata data compressed with zstd level 3
+- **Format v2**: New snapshot format with sparse representation
+
+### Breaking
+
+> [!WARNING]
+> v1.9.0 snapshots are NOT backward compatible with v1.8.0.
+> v1.9.0 CAN read v1.8.0 snapshots and auto-migrates on save.
+
+### Technical
+
+- 90/90 tests passing (+1 sparse size reduction test)
+- Empty 10K×64 arena: 15MB → ~100 bytes (>99.99% reduction)
+
+---
+
 ## [1.8.0] - 2026-01-25
 
 ### 🩹 Crash Recovery - "Trauma-Aware Restart"

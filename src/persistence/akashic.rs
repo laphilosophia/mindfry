@@ -333,7 +333,28 @@ impl AkashicStore {
     }
 
     fn serialize_strata(&self, strata: &StrataArena) -> Result<Vec<u8>> {
-        // Just serialize the raw engram slice
+        // SPARSE SERIALIZATION (v2 format)
+        // Only serialize engrams where timestamp != 0 (non-empty slots)
+        // INVARIANT: timestamp == 0 means "empty slot" — this is ABI.
+        let sparse: Vec<(u32, Engram)> = strata
+            .as_slice()
+            .iter()
+            .enumerate()
+            .filter(|(_, e)| e.timestamp != 0)
+            .map(|(i, e)| (i as u32, *e))
+            .collect();
+
+        let raw = bincode::serialize(&sparse)?;
+
+        // Compress with zstd level 3 (fast)
+        let compressed = zstd::encode_all(&raw[..], 3).map_err(|e| AkashicError::Io(e))?;
+
+        Ok(compressed)
+    }
+
+    /// Serialize strata in legacy v1 format (full buffer, no compression)
+    #[allow(dead_code)]
+    fn serialize_strata_v1(&self, strata: &StrataArena) -> Result<Vec<u8>> {
         let engrams: Vec<Engram> = strata.as_slice().to_vec();
         Ok(bincode::serialize(&engrams)?)
     }
@@ -362,14 +383,39 @@ impl AkashicStore {
         max_lineages: usize,
         depth: usize,
     ) -> Result<StrataArena> {
+        // v2 format: zstd compressed sparse Vec<(u32, Engram)>
+        // Decompress first
+        let decompressed = zstd::decode_all(data).map_err(|e| AkashicError::Io(e))?;
+
+        let sparse: Vec<(u32, Engram)> = bincode::deserialize(&decompressed)?;
+
+        // Create arena with empty slots
+        let mut arena = StrataArena::with_capacity(max_lineages, depth);
+
+        // Restore only the non-empty engrams
+        arena.restore_from_sparse(sparse);
+
+        Ok(arena)
+    }
+
+    /// Deserialize strata from legacy v1 format (full buffer, no compression)
+    #[allow(dead_code)]
+    fn deserialize_strata_v1(
+        &self,
+        data: &[u8],
+        max_lineages: usize,
+        depth: usize,
+    ) -> Result<StrataArena> {
         let engrams: Vec<Engram> = bincode::deserialize(data)?;
 
-        // Create arena and populate
-        let arena = StrataArena::with_capacity(max_lineages, depth);
+        // Create arena and set each slot
+        let mut arena = StrataArena::with_capacity(max_lineages, depth);
 
-        // Note: For now we rebuild from serialized data
-        // TODO: Direct memory restore for zero-copy
-        let _ = engrams; // Placeholder - full restore needs lineage mapping
+        for (i, engram) in engrams.into_iter().enumerate() {
+            if engram.timestamp != 0 {
+                arena.set_at(i, engram);
+            }
+        }
 
         Ok(arena)
     }
@@ -575,5 +621,32 @@ mod tests {
 
         assert!(store.delete_snapshot(meta.id).unwrap());
         assert!(store.get_snapshot(meta.id).unwrap().is_none());
+    }
+
+    #[test]
+    fn test_sparse_strata_size_reduction() {
+        // Create a large empty strata arena (simulates 1M lineage capacity)
+        let strata = StrataArena::with_capacity(10_000, 64); // 10K × 64 = 640K engrams
+
+        // v1 format would be: 640K × 24 bytes = 15.36 MB
+        let v1_theoretical_size = 10_000 * 64 * 24;
+
+        // v2 sparse format: empty arena = ~40 bytes (just empty vec + compression)
+        let config = temp_config();
+        let store = AkashicStore::open(config).unwrap();
+
+        let serialized = store.serialize_strata(&strata).unwrap();
+
+        // Assert massive reduction: v2 should be < 1% of v1
+        assert!(
+            serialized.len() < v1_theoretical_size / 100,
+            "Sparse strata should be < 1% of v1 size. Got {} bytes, expected < {} bytes",
+            serialized.len(),
+            v1_theoretical_size / 100
+        );
+
+        // Verify roundtrip works
+        let restored = store.deserialize_strata(&serialized, 10_000, 64).unwrap();
+        assert_eq!(restored.as_slice().len(), strata.as_slice().len());
     }
 }

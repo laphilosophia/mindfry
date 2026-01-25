@@ -1,6 +1,6 @@
 [package]
 name = "mindfry"
-version = "1.8.0"
+version = "1.9.0"
 edition = "2021"
 authors = ["Erdem Arslan <erdemarslan@ymail.com>"]
 description = "Memory with a Conscience"
@@ -46,6 +46,9 @@ rustc-hash = "2"
 
 # String interning (symbol table)
 string-interner = "0.18"
+
+# Compression (snapshot format v2)
+zstd = "0.13"
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
