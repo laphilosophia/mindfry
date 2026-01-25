@@ -9,6 +9,7 @@ use std::time::Instant;
 
 use crate::arena::Lineage;
 use crate::graph::Bond;
+use crate::stability::WarmupTracker;
 use crate::MindFry;
 
 use super::message::*;
@@ -25,6 +26,8 @@ pub struct CommandHandler {
     /// Exhaustion monitor for backpressure
     #[allow(dead_code)] // Reserved for operation cost tracking
     exhaustion: crate::stability::ExhaustionMonitor,
+    /// Warmup tracker for progressive availability
+    warmup: WarmupTracker,
 }
 
 impl CommandHandler {
@@ -35,11 +38,36 @@ impl CommandHandler {
             start_time: Instant::now(),
             is_frozen: false,
             exhaustion: crate::stability::ExhaustionMonitor::default(),
+            warmup: WarmupTracker::new(),
+        }
+    }
+
+    /// Create a new command handler with warmup tracker
+    pub fn with_warmup(db: Arc<RwLock<MindFry>>, warmup: WarmupTracker) -> Self {
+        Self {
+            db,
+            start_time: Instant::now(),
+            is_frozen: false,
+            exhaustion: crate::stability::ExhaustionMonitor::default(),
+            warmup,
         }
     }
 
     /// Handle a request and return a response
     pub fn handle(&mut self, request: Request) -> Response {
+        // ═══════════════════════════════════════════════════════════════
+        // WARMUP CHECK (Progressive Availability)
+        // ═══════════════════════════════════════════════════════════════
+        // Allow Ping and Stats during warmup (always accessible)
+        let is_warmup_exempt = matches!(request, Request::Ping | Request::Stats);
+
+        if !is_warmup_exempt && !self.warmup.is_ready() {
+            return Response::Error {
+                code: ErrorCode::WarmingUp,
+                message: "Server warming up - cognitively unavailable".into(),
+            };
+        }
+
         // ═══════════════════════════════════════════════════════════════
         // EXHAUSTION CHECK (Backpressure)
         // ═══════════════════════════════════════════════════════════════

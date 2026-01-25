@@ -84,8 +84,8 @@ Look for issues labeled `good first issue` - these are suitable for newcomers.
 
 ## Questions?
 
-- Open a [Discussion](https://github.com/laphilosophia/mindfry/discussions) for questions
-- Check existing [Issues](https://github.com/laphilosophia/mindfry/issues) before opening a new one
+- Open a [Discussion](https://github.com/cluster-127/mindfry/discussions) for questions
+- Check existing [Issues](https://github.com/cluster-127/mindfry/issues) before opening a new one
 
 ## License
 

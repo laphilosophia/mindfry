@@ -25,9 +25,9 @@ MindFry is **subjective** — it processes data through a simulated cognitive la
 - **Strengthen** frequently accessed data (Hebbian learning)
 - **Propagate** stimulation through neural bonds (synaptic chains)
 
-## 🧬 Core Principles
+## Core Principles
 
-### 🧠 Tri-Cortex Architecture
+### Tri-Cortex Architecture
 
 Decisions are made using **Balanced Ternary Logic** (Setun):
 
@@ -37,7 +37,7 @@ Decisions are made using **Balanced Ternary Logic** (Setun):
 
 The database has a **Personality Octet** (8 dimensions) and a **Mood** that affects data prioritization.
 
-### ❤️ Mood & Personality
+### Mood & Personality
 
 > **Note:** Mood affects which data surfaces first, not whether your requests succeed. All data remains accessible — mood just influences the "attention" priority.
 
@@ -48,7 +48,7 @@ Mood modulates the consciousness threshold:
 
 **Override anytime:** Use `BYPASS_FILTERS` flag for guaranteed access regardless of mood.
 
-### 🕸️ Synaptic Propagation
+### Synaptic Propagation
 
 When you `stimulate("A")`:
 
@@ -58,7 +58,7 @@ A (+1.0) → B (+0.5) → C (+0.25) → ... (damped)
 
 Touch one memory, its neighbors tremble.
 
-### 💾 Resurrection
+### Resurrection
 
 Shutdown and restart. The database remembers:
 
@@ -68,17 +68,17 @@ Shutdown and restart. The database remembers:
 
 ## Quick Start
 
-### 🐳 Docker (Recommended)
+### Docker (Recommended)
 
 ```bash
-docker run -d -p 9527:9527 ghcr.io/laphilosophia/mindfry:latest
+docker run -d -p 9527:9527 ghcr.io/cluster-127/mindfry:latest
 ```
 
 ### From Source
 
 ```bash
 # Clone
-git clone https://github.com/laphilosophia/mindfry.git
+git clone https://github.com/cluster-127/mindfry.git
 cd mindfry
 
 # Run server
@@ -125,7 +125,7 @@ console.log(associated.energy) // Increased by propagation
 
 ## License
 
-[Apache-2.0](LICENSE) © [Erdem Arslan](https://github.com/laphilosophia)
+[Apache-2.0](LICENSE) © [Erdem Arslan](https://github.com/cluster-127)
 
 ---
 

@@ -18,6 +18,7 @@
 
 pub mod exhaustion;
 pub mod health;
+pub mod recovery;
 pub mod shutdown;
 pub mod warmup;
 
@@ -26,6 +27,9 @@ pub use exhaustion::{
     TunerStats,
 };
 pub use health::{HealthStatus, SelfDiagnostic};
+pub use recovery::{
+    RecoveryAnalyzer, RecoveryState, ShutdownMarker, COMA_THRESHOLD_SECS, RESISTANCE_DECAY_RATE,
+};
 pub use shutdown::{ShutdownReason, ShutdownTracker};
 pub use warmup::{WarmupState, WarmupTracker};
 

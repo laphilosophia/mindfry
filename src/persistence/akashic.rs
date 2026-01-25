@@ -294,6 +294,34 @@ impl AkashicStore {
     }
 
     // ═══════════════════════════════════════════════════════════════
+    // SHUTDOWN MARKER (for crash recovery)
+    // ═══════════════════════════════════════════════════════════════
+
+    /// Write a graceful shutdown marker
+    pub fn write_shutdown_marker(&self, marker: &crate::stability::ShutdownMarker) -> Result<()> {
+        let meta_tree = self.db.open_tree("meta")?;
+        let data = bincode::serialize(marker)?;
+        meta_tree.insert("shutdown_marker", data)?;
+        self.db.flush()?;
+        Ok(())
+    }
+
+    /// Read and clear the shutdown marker
+    /// Returns None if no marker exists (first run or clean startup)
+    pub fn read_shutdown_marker(&self) -> Result<Option<crate::stability::ShutdownMarker>> {
+        let meta_tree = self.db.open_tree("meta")?;
+        match meta_tree.get("shutdown_marker")? {
+            Some(data) => {
+                let marker: crate::stability::ShutdownMarker = bincode::deserialize(&data)?;
+                // Clear the marker so next unclean shutdown is detected
+                meta_tree.remove("shutdown_marker")?;
+                Ok(Some(marker))
+            }
+            None => Ok(None),
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     // SERIALIZATION HELPERS
     // ═══════════════════════════════════════════════════════════════
 

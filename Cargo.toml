@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["Erdem Arslan <erdemarslan@ymail.com>"]
 description = "Memory with a Conscience"
 license = "Apache-2.0"
-repository = "https://github.com/laphilosophia/mindfry"
+repository = "https://github.com/cluster-127/mindfry"
 keywords = ["database", "graph", "cognitive", "ephemeral", "decay"]
 categories = ["database", "data-structures"]
 
@@ -71,6 +71,10 @@ harness = false
 
 [[bench]]
 name = "graph"
+harness = false
+
+[[bench]]
+name = "stability"
 harness = false
 
 # ═══════════════════════════════════════════════════════════════

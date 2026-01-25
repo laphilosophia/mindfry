@@ -84,6 +84,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
+    // Step 1.5: Crash Recovery Detection
+    print!("  │ 🔍 Checking recovery state...");
+    std::io::Write::flush(&mut std::io::stdout())?;
+    let last_marker = store.read_shutdown_marker().ok().flatten();
+    let recovery_analyzer = mindfry::stability::RecoveryAnalyzer::new(last_marker);
+    let recovery_state = recovery_analyzer.analyze();
+    match recovery_state {
+        mindfry::stability::RecoveryState::Normal => println!(" ✓ (clean)"),
+        mindfry::stability::RecoveryState::Shock => {
+            println!(" ⚠ (SHOCK detected)");
+            warn!("🩹 Unclean shutdown detected - building resistance");
+        }
+        mindfry::stability::RecoveryState::Coma => {
+            println!(" ⚠ (COMA detected)");
+            warn!(
+                "😴 Prolonged downtime: {}s",
+                recovery_analyzer.downtime_secs()
+            );
+        }
+    }
+
     // Step 2: Initialize Psyche Arena (empty)
     print!("  │ 🧠 Initializing Psyche Arena...");
     std::io::Write::flush(&mut std::io::stdout())?;
@@ -175,7 +196,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ═══════════════════════════════════════════════════════════════
 
     let shutdown_result = tokio::select! {
-        result = accept_loop(listener, Arc::clone(&db)) => {
+        result = accept_loop(listener, Arc::clone(&db), warmup.clone()) => {
             // Accept loop returned (error or explicit stop)
             result
         }
@@ -208,6 +229,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         Ok(meta) => info!("💾 Pre-shutdown snapshot saved: {}", meta.id),
                         Err(e) => warn!("⚠️ Failed to save shutdown snapshot: {}", e),
                     }
+
+                    // Write graceful shutdown marker for crash recovery
+                    let marker = mindfry::stability::ShutdownMarker::graceful();
+                    match store.write_shutdown_marker(&marker) {
+                        Ok(_) => info!("✅ Graceful shutdown marker written"),
+                        Err(e) => warn!("⚠️ Failed to write shutdown marker: {}", e),
+                    }
                 }
             }
 
@@ -225,18 +253,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 async fn accept_loop(
     listener: TcpListener,
     db: Arc<RwLock<MindFry>>,
+    warmup: mindfry::stability::WarmupTracker,
 ) -> Result<mindfry::stability::ShutdownReason, Box<dyn std::error::Error + Send + Sync>> {
     loop {
         match listener.accept().await {
             Ok((socket, peer)) => {
                 info!("📥 New connection from {}", peer);
 
-                // Clone Arc for the handler
+                // Clone for the handler
                 let db_clone = Arc::clone(&db);
+                let warmup_clone = warmup.clone();
 
                 // Spawn connection handler
                 tokio::spawn(async move {
-                    if let Err(e) = handle_connection(socket, db_clone).await {
+                    if let Err(e) = handle_connection(socket, db_clone, warmup_clone).await {
                         error!("Connection error: {}", e);
                     }
                     info!("📤 Connection closed: {}", peer);
@@ -254,8 +284,9 @@ async fn accept_loop(
 async fn handle_connection(
     mut socket: TcpStream,
     db: Arc<RwLock<MindFry>>,
+    warmup: mindfry::stability::WarmupTracker,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let mut handler = CommandHandler::new(db);
+    let mut handler = CommandHandler::with_warmup(db, warmup);
     let mut buffer = vec![0u8; 4096];
     let mut read_buf = Vec::new();
 
