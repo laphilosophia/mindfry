@@ -2,7 +2,7 @@
 
 **A Subjective Biological Memory Substrate**
 
-> _"Databases store data. MindFry_ **_feels_** _it."_
+> Memory = f(access, decay, mood, bonds)
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-90%20passing-brightgreen)]()
@@ -140,4 +140,4 @@ console.log(associated.energy) // Increased by propagation
 
 ---
 
-_"If you're not embarrassed by the first version of your product, you've launched too late."_ — Reid Hoffman
+**Core Formula:** `E(t) = E₀ × e^(-λt) × (1 + Σ stimulation)`
